@@ -1,0 +1,14 @@
+
+{
+  "name": "pgvms-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "make dev",
+    "start": "make dev",
+    "backend": "make run",
+    "frontend": "cd frontend && npm start",
+    "test": "make test",
+    "lint": "echo 'no lint configured'"
+  }
+}
