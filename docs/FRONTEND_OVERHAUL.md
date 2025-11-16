@@ -71,6 +71,24 @@
 - **Position**: Top-right (desktop), full-width (mobile)
 - **Context API**: useToast() hook for easy usage
 
+#### DeleteConfirmationModal Component ✨ NEW
+- **Purpose**: Standardized delete confirmation across all entities
+- **Features**:
+  - Attestation input field (must type "I CONFIRM DELETE")
+  - Reason textarea (required)
+  - Real-time validation of attestation phrase
+  - Submit disabled until valid attestation and reason provided
+  - Cancel button to dismiss
+  - Error handling and toast notifications
+- **Usage**: Customers, Inventory, Transactions, Crates, Wastage, Expiry Alerts
+- **Props**:
+  - `isOpen` - Boolean to show/hide modal
+  - `onClose` - Function to close modal
+  - `onConfirm` - Function called with {reason, attestation}
+  - `itemName` - Name/description of item being deleted
+  - `entityType` - Type of entity (customer, inventory item, etc.)
+- **Security**: Client-side attestation validation + server-side enforcement
+
 ### 3. Modernized Layout (`src/components/Layout.js`)
 - **Sidebar**:
   - Desktop: 280px width, collapsible to 72px
@@ -189,30 +207,32 @@
 ```
 frontend/src/
 ├── components/
-│   ├── ui/                    # NEW: Reusable UI components
-│   │   ├── Button.js
-│   │   ├── Button.css
-│   │   ├── Card.js
-│   │   ├── Card.css
-│   │   ├── Badge.js
-│   │   ├── Badge.css
-│   │   ├── Input.js
-│   │   ├── Input.css
-│   │   ├── Select.js
-│   │   ├── Select.css
-│   │   ├── Modal.js
-│   │   ├── Modal.css
-│   │   ├── Toast.js
-│   │   ├── Toast.css
+│   ├── ui/                    # Reusable UI components
+│   │   ├── Button.js / Button.css
+│   │   ├── Card.js / Card.css
+│   │   ├── Badge.js / Badge.css
+│   │   ├── Input.js / Input.css
+│   │   ├── Select.js / Select.css
+│   │   ├── Modal.js / Modal.css
+│   │   ├── Toast.js / Toast.css
 │   │   └── index.js           # Barrel export
+│   ├── DeleteConfirmationModal.js  # NEW: Attestation modal
 │   ├── Layout.js              # UPDATED: Modern sidebar
 │   └── Layout.css             # UPDATED: Responsive styles
 ├── pages/
 │   ├── Dashboard.js           # UPDATED: Modern with charts
-│   ├── Dashboard.css          # NEW: Dashboard styles
-│   └── Dashboard_old.js       # BACKUP: Original version
+│   ├── Dashboard.css          # Dashboard styles
+│   ├── Dashboard_old.js       # BACKUP: Original version
+│   ├── Inventory.js           # UPDATED: Full CRUD with delete
+│   ├── Customers.js           # UPDATED: Full CRUD with delete
+│   ├── Transactions.js        # UPDATED: Edit/delete support
+│   ├── Crates.js              # UPDATED: Delete support
+│   ├── Wastage.js             # NEW: Wastage tracking page
+│   ├── ExpiryAlerts.js        # NEW: Expiry alert management
+│   ├── Forecasting.js         # Original
+│   └── Reports.js             # Original
 ├── styles/
-│   └── variables.css          # NEW: Design system tokens
+│   └── variables.css          # Design system tokens
 ├── App.js                     # UPDATED: Added ToastProvider
 └── App.css                    # UPDATED: Import variables
 ```
@@ -246,8 +266,11 @@ frontend/src/
 ## 📊 Metrics
 
 ### Code Stats
-- **New Components**: 8 UI components (7 with separate CSS files)
-- **Lines of Code**: ~2,500 lines (components + styles)
+- **UI Components**: 8 reusable components (7 with separate CSS files)
+- **Special Components**: 1 (DeleteConfirmationModal)
+- **Pages Updated**: 6 (Dashboard, Inventory, Customers, Transactions, Crates, + 2 new pages)
+- **New Pages**: 2 (Wastage, ExpiryAlerts)
+- **Lines of Code**: ~3,500 lines (components + styles + pages)
 - **Design Tokens**: 100+ CSS variables
 - **Chart Types**: 3 (Line, Bar, Doughnut)
 - **Icons**: 20+ Lucide icons
@@ -314,19 +337,22 @@ import { Card, Button, Badge, Input, Select, Modal, useToast } from '../componen
 
 ## 📝 Next Steps
 
-### Immediate (This Sprint)
+### Immediate (Completed ✅)
 1. ✅ Test new dashboard in browser
-2. ⏳ Update remaining pages (Inventory, Customers, Transactions, Crates, Forecasting, Reports)
-3. ⏳ Add form validation using new Input/Select components
-4. ⏳ Replace all `alert()` calls with toast notifications
-5. ⏳ Add loading skeletons instead of spinners
+2. ✅ Update remaining pages (Inventory, Customers, Transactions, Crates)
+3. ✅ Add new pages (Wastage, ExpiryAlerts)
+4. ✅ Add form validation using new Input/Select components
+5. ✅ Replace all `alert()` calls with toast notifications
+6. ✅ Add delete confirmation with attestation requirement
+7. ✅ Implement soft delete across all entities
 
 ### Short-term (Next 2 Weeks)
-1. Add dark mode support (toggle in user menu)
-2. Add animations (framer-motion)
-3. Create Storybook for component documentation
-4. Add accessibility features (ARIA labels, keyboard nav)
-5. Performance optimization (code splitting, lazy loading)
+1. Add loading skeletons instead of spinners
+2. Add dark mode support (toggle in user menu)
+3. Add animations (framer-motion)
+4. Create Storybook for component documentation
+5. Add accessibility features (ARIA labels, keyboard nav)
+6. Performance optimization (code splitting, lazy loading)
 
 ### Long-term (Next Quarter)
 1. Build iOS app using React Native

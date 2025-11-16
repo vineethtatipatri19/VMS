@@ -12,19 +12,27 @@ A complete, production-ready vendor management system for perishable goods with 
 - ✅ Module 3: Customer management with KYC status
 - ✅ Module 4: Transaction ledger (digital patti book) with filtering
 - ✅ Module 5: Crate management for returnable assets
-- ✅ Module 6: AI-powered demand forecasting with Google Gemini
-- ✅ Module 7: Comprehensive reporting (sales, inventory, customer)
+- ✅ Module 6: Wastage tracking and expiry alerts
+- ✅ Module 7: AI-powered demand forecasting with Google Gemini
+- ✅ Module 8: Comprehensive reporting (sales, inventory, customer)
+- ✅ **Enterprise-grade audit trail** with soft deletes (nothing is truly deleted)
+- ✅ **Attestation requirement** for all delete operations with deletion reason
+- ✅ Complete edit/update functionality for all entities
 - ✅ Transactional integrity for financial operations
 - ✅ PostgreSQL database with migrations
 - ✅ Production-ready error handling and validation
 
 ### Frontend (React Web)
 - ✅ Modern React web application with responsive design
-- ✅ All screens: Dashboard, Inventory, Customers, Transactions, Crates, Forecasting, Reports
-- ✅ JWT authentication flow
-- ✅ API client with axios
+- ✅ All screens: Dashboard, Inventory, Customers, Transactions, Crates, Wastage, Expiry Alerts, Forecasting, Reports
+- ✅ **DeleteConfirmationModal** with attestation requirement ("I CONFIRM DELETE")
+- ✅ Complete CRUD operations with edit/delete buttons on all entity tables
+- ✅ Deletion reason capture and audit trail warnings
+- ✅ JWT authentication flow with protected routes
+- ✅ Custom UI component library (Badge, Button, Card, Input, Select, Modal, Toast)
+- ✅ API client with axios and error handling
 - ✅ State management with Context API
-- ✅ Form validation and error handling
+- ✅ Form validation and comprehensive error handling
 - ✅ Print functionality for reports
 - ✅ Loading states and user feedback
 
@@ -153,24 +161,39 @@ Frontend will be available at http://localhost:3000
 - `POST /api/v1/inventory` - Create inventory item
 - `GET /api/v1/inventory/{id}` - Get inventory item
 - `PUT /api/v1/inventory/{id}` - Update inventory item
-- `DELETE /api/v1/inventory/{id}` - Delete inventory item
+- `DELETE /api/v1/inventory/{id}` - Soft delete inventory item (requires reason & attestation)
 
 ### Customers
 - `GET /api/v1/customers` - List customers
 - `POST /api/v1/customers` - Create customer
 - `GET /api/v1/customers/{id}` - Get customer
 - `PUT /api/v1/customers/{id}` - Update customer
-- `DELETE /api/v1/customers/{id}` - Delete customer
+- `DELETE /api/v1/customers/{id}` - Soft delete customer (requires reason & attestation)
 
 ### Transactions
 - `GET /api/v1/transactions` - List transactions (supports ?customerId=&type=sale|payment)
 - `POST /api/v1/transactions` - Create transaction (sale or payment)
 - `GET /api/v1/transactions/{id}` - Get transaction
+- `PUT /api/v1/transactions/{id}` - Update transaction
+- `DELETE /api/v1/transactions/{id}` - Soft delete transaction (requires reason & attestation)
 
 ### Crates
 - `GET /api/v1/crates` - List crate ledger entries (supports ?customerId=)
 - `POST /api/v1/crates` - Create crate entry
+- `PUT /api/v1/crates/{id}` - Update crate entry
+- `DELETE /api/v1/crates/{id}` - Soft delete crate entry (requires reason & attestation)
 - `GET /api/v1/crates/balance/{customerId}` - Get crate balance for customer
+
+### Wastage
+- `GET /api/v1/wastage` - List wastage log entries (supports ?reason=expired|damaged|contaminated|other)
+- `POST /api/v1/wastage` - Create wastage entry
+- `PUT /api/v1/wastage/{id}` - Update wastage entry
+- `DELETE /api/v1/wastage/{id}` - Soft delete wastage entry (requires reason & attestation)
+
+### Expiry Alerts
+- `GET /api/v1/expiry-alerts` - List expiry alerts (supports ?acknowledged=true|false)
+- `PUT /api/v1/expiry-alerts/{id}/acknowledge` - Acknowledge an alert
+- `DELETE /api/v1/expiry-alerts/{id}` - Soft delete expiry alert (requires reason & attestation)
 
 ### Forecasting (AI)
 - `POST /api/v1/forecast` - Generate demand forecast using Google Gemini AI
@@ -238,35 +261,79 @@ npm run build
 
 ```
 .
-├── backend/              # Go backend
-│   ├── main.go          # Main entry point with routing
-│   ├── auth.go          # Authentication handlers
-│   ├── customers.go     # Customer CRUD handlers
-│   ├── inventory.go     # Inventory CRUD handlers
-│   ├── transaction_service.go  # Transaction handlers
-│   ├── crates.go        # Crate management handlers
-│   ├── dashboard.go     # Dashboard KPI handlers
-│   ├── forecasting.go   # AI forecasting with Gemini
-│   ├── reports.go       # Report generation
-│   ├── helpers.go       # Utility functions
-│   ├── migrate.go       # Database migration logic
-│   └── Dockerfile       # Backend container
-├── frontend/            # React frontend
+├── backend/                      # Go backend
+│   ├── main.go                  # Main entry point with routing
+│   ├── auth.go                  # Authentication handlers
+│   ├── customers.go             # Customer CRUD handlers
+│   ├── inventory.go             # Inventory CRUD handlers
+│   ├── transaction_service.go   # Transaction list/create handlers
+│   ├── transaction_update.go    # Transaction update handler
+│   ├── crates.go                # Crate management handlers
+│   ├── enhanced_entities.go     # Wastage and expiry alerts handlers
+│   ├── delete_handlers.go       # Centralized soft delete handlers with attestation
+│   ├── update_handlers.go       # Update handlers for customers, crates, wastage
+│   ├── dashboard.go             # Dashboard KPI handlers
+│   ├── forecasting.go           # AI forecasting with Gemini
+│   ├── reports.go               # Report generation
+│   ├── helpers.go               # Utility functions
+│   ├── migrate.go               # Database migration logic
+│   ├── startup.go               # Application initialization
+│   └── Dockerfile               # Backend container
+├── frontend/                     # React frontend
 │   ├── src/
-│   │   ├── pages/       # Page components
-│   │   ├── components/  # Reusable components
-│   │   ├── services/    # API client
-│   │   ├── context/     # React context (auth)
-│   │   └── App.js       # Main app with routing
-│   ├── public/          # Static files
-│   ├── Dockerfile       # Frontend container
-│   └── nginx.conf       # Nginx configuration
+│   │   ├── pages/               # Page components
+│   │   │   ├── Dashboard.js     # Dashboard with KPIs
+│   │   │   ├── Inventory.js     # Inventory management with edit/delete
+│   │   │   ├── Customers.js     # Customer management with edit/delete
+│   │   │   ├── Transactions.js  # Transaction ledger with edit/delete
+│   │   │   ├── Crates.js        # Crate management with edit/delete
+│   │   │   ├── Wastage.js       # Wastage tracking with edit/delete
+│   │   │   ├── ExpiryAlerts.js  # Expiry alerts with delete
+│   │   │   ├── Forecasting.js   # AI forecasting
+│   │   │   ├── Reports.js       # Report generation
+│   │   │   ├── Login.js         # Login page
+│   │   │   └── Register.js      # Registration page
+│   │   ├── components/          # Reusable components
+│   │   │   ├── Layout.js        # Main layout with sidebar
+│   │   │   ├── DeleteConfirmationModal.js  # Delete confirmation with attestation
+│   │   │   └── ui/              # UI component library
+│   │   │       ├── Badge.js     # Badge component
+│   │   │       ├── Button.js    # Button component
+│   │   │       ├── Card.js      # Card component
+│   │   │       ├── Input.js     # Input component
+│   │   │       ├── Modal.js     # Modal component
+│   │   │       ├── Select.js    # Select component
+│   │   │       └── Toast.js     # Toast notification component
+│   │   ├── services/            # API client
+│   │   │   └── api.js           # Axios client with all API methods
+│   │   ├── context/             # React context
+│   │   │   └── AuthContext.js   # Authentication context
+│   │   ├── styles/              # Global styles
+│   │   │   └── variables.css    # CSS variables
+│   │   └── App.js               # Main app with routing
+│   ├── public/                  # Static files
+│   ├── Dockerfile               # Frontend container
+│   └── nginx.conf               # Nginx configuration
 ├── infra/
-│   ├── migrations/      # Database migrations
-│   └── cloudbuild.yaml  # Google Cloud Build config
-├── docker-compose.yml   # Local development setup
-├── .env.example         # Environment variables template
-└── README.md            # This file
+│   ├── migrations/              # Database migrations
+│   │   ├── 001_init.sql        # Initial schema
+│   │   ├── 002_users.sql       # Users table
+│   │   ├── 003_add_indexes.sql # Performance indexes
+│   │   └── 004_enhance_entities.sql  # Enhanced fields & audit columns
+│   ├── local/                   # Local development data
+│   │   ├── demo_simple.sql     # Demo data (45 inventory, 15 customers, etc.)
+│   │   └── demo_seed.sql       # Alternative seed data
+│   ├── terraform/               # Infrastructure as Code
+│   └── cloudbuild.yaml          # Google Cloud Build config
+├── docs/                        # Documentation
+│   ├── API.md                   # API documentation
+│   ├── DEPLOYMENT.md            # Deployment guide
+│   ├── ENHANCED_ENTITIES.md     # Enhanced entity documentation
+│   ├── ENTITY_FIELDS_SUMMARY.md # Field reference
+│   └── ER.sql                   # Database schema reference
+├── docker-compose.yml           # Local development setup
+├── .env.example                 # Environment variables template
+└── README.md                    # This file
 ```
 
 ## Features Walkthrough
@@ -275,31 +342,57 @@ npm run build
 - View key metrics: customers, expiring items, sales, outstanding balances
 - Quick action buttons for common tasks
 - Recent activity feed
+- Real-time inventory status overview
 
 ### Inventory Management
 - FEFO (First Expired First Out) sorting
 - Visual status badges (Fresh, Expiring Soon, Expired)
 - Filter by status
-- Add, edit, delete inventory items
-- Track lot numbers, quantities, and expiry dates
+- **Full CRUD operations**: Add, edit, update, soft delete with attestation
+- Track 35+ fields including lot numbers, quantities, expiry dates, suppliers, pricing, storage location
+- Comprehensive inventory details with cost price, selling price, margin calculation
 
 ### Customer Management
-- Complete customer information
-- KYC verification status
-- Contact details and address
-- CRUD operations
+- Complete customer information with 26+ fields
+- KYC verification status (Aadhaar, documents)
+- Contact details (phone, WhatsApp, alternate)
+- Business information (GSTIN, business name)
+- Credit management (limit, current balance, payment terms)
+- Tags and categorization (retail/wholesale)
+- **Full CRUD operations** with edit and soft delete functionality
 
 ### Transaction Ledger (Digital Patti Book)
-- Record sales and payments
+- Record sales and payments with 21+ fields
 - Multi-item sales with automatic inventory deduction
+- Payment tracking (method, reference, due dates)
+- Discount and tax management
+- Delivery status tracking
 - Transaction filtering by type and customer
+- **Full edit and soft delete** with audit trail
 - Complete transaction history
 
 ### Crate Management
 - Track returnable crates per customer
-- Issue and return crates
+- Issue and return crates with balance tracking
 - View balance for each customer
-- Transaction history
+- **Edit and soft delete** crate entries
+- Complete transaction history with notes
+
+### Wastage Tracking
+- Log damaged, expired, contaminated items
+- Track cost impact of wastage
+- Categorize by reason (expired, damaged, contaminated, spillage, other)
+- Photo documentation support
+- **Edit and soft delete** wastage entries
+- Complete audit trail
+
+### Expiry Alerts
+- Automatic alerts for items approaching expiry
+- Days until expiry calculation
+- Urgency badges (Critical, Urgent, Moderate)
+- Acknowledge alerts with timestamp
+- **Soft delete** functionality with attestation
+- Filter by acknowledged status
 
 ### AI Forecasting
 - Demand prediction using Google Gemini AI
@@ -314,14 +407,26 @@ npm run build
 - Print-friendly layouts
 - Date range filtering
 
+### Audit & Compliance Features
+- **Nothing is truly deleted** - All records preserved with soft delete markers
+- **Complete audit trail** - Track who deleted, when, why, and attestation
+- **Attestation requirement** - Users must type "I CONFIRM DELETE" exactly
+- **Deletion reason mandatory** - Text explanation required for all deletions
+- **Restorable records** - Soft-deleted items can be restored by clearing deleted_at
+- **Updated tracking** - Track who updated records and when (updated_at, updated_by)
+
 ## Security
 
-- JWT-based authentication
+- JWT-based authentication with protected routes
 - Password hashing with bcrypt
 - Environment-based secrets (no hardcoded credentials)
 - CORS enabled for frontend-backend communication
 - Database transaction integrity
 - Input validation and error handling
+- **Audit trail compliance** - All deletions tracked with who, when, why
+- **Soft delete protection** - No data loss, all records restorable
+- **Attestation requirement** - Prevents accidental deletions
+- SQL injection protection with parameterized queries
 
 ## Support
 

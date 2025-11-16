@@ -4,7 +4,7 @@
 
 ---
 
-## 👥 CUSTOMERS (26 fields)
+## 👥 CUSTOMERS (30 fields)
 
 ### Display Priority: HIGH
 - ✅ **name** - Customer name
@@ -27,9 +27,14 @@
 - notes, tags
 - created_at, updated_at
 
+### Audit Fields (System)
+- 🔒 **deleted_at** - Soft delete timestamp (NULL = active)
+- 🔒 **deleted_by** - User who deleted
+- 🔒 **deletion_reason** - Why deleted
+
 ---
 
-## 📦 INVENTORY ITEMS (35 fields)
+## 📦 INVENTORY ITEMS (38 fields)
 
 ### Display Priority: HIGH
 - ✅ **name** - Item name
@@ -56,9 +61,14 @@
 - total_sold, total_wasted
 - created_at, updated_at
 
+### Audit Fields (System)
+- 🔒 **deleted_at** - Soft delete timestamp (NULL = active)
+- 🔒 **deleted_by** - User who deleted
+- 🔒 **deletion_reason** - Why deleted
+
 ---
 
-## 💰 TRANSACTIONS (21 fields)
+## 💰 TRANSACTIONS (24 fields)
 
 ### Display Priority: HIGH
 - ✅ **invoice_number** - Auto-generated
@@ -82,9 +92,14 @@
 - details (JSONB)
 - created_at
 
+### Audit Fields (System)
+- 🔒 **deleted_at** - Soft delete timestamp (NULL = active)
+- 🔒 **deleted_by** - User who deleted
+- 🔒 **deletion_reason** - Why deleted
+
 ---
 
-## 📋 SALE ITEMS (13 fields)
+## 📋 SALE ITEMS (16 fields)
 
 ### Display Priority: HIGH
 - ✅ **item_name** - Product name
@@ -101,9 +116,14 @@
 - transaction_id, inventory_lot_id
 - batch_number, expiry_date, hsn_code
 
+### Audit Fields (System)
+- 🔒 **deleted_at** - Soft delete timestamp (NULL = active)
+- 🔒 **deleted_by** - User who deleted
+- 🔒 **deletion_reason** - Why deleted
+
 ---
 
-## 📦 CRATES (9 fields)
+## 📦 CRATES (12 fields)
 
 ### Display Priority: HIGH
 - ✅ **customer_id** - Customer
@@ -118,9 +138,14 @@
 ### Display Priority: LOW
 - transaction_id, notes, updated_at
 
+### Audit Fields (System)
+- 🔒 **deleted_at** - Soft delete timestamp (NULL = active)
+- 🔒 **deleted_by** - User who deleted
+- 🔒 **deletion_reason** - Why deleted
+
 ---
 
-## ��️ WASTAGE LOG (10 fields)
+## 🗑️ WASTAGE LOG (13 fields)
 
 ### Display Priority: HIGH
 - ✅ **item_name** - Wasted item
@@ -135,9 +160,14 @@
 ### Display Priority: LOW
 - inventory_item_id, unit, photo_url
 
+### Audit Fields (System)
+- 🔒 **deleted_at** - Soft delete timestamp (NULL = active)
+- 🔒 **deleted_by** - User who deleted
+- 🔒 **deletion_reason** - Why deleted
+
 ---
 
-## ⏰ EXPIRY ALERTS (9 fields)
+## ⏰ EXPIRY ALERTS (12 fields)
 
 ### Display Priority: HIGH
 - ✅ **inventory_item_id** - Item reference
@@ -148,6 +178,11 @@
 
 ### Display Priority: LOW
 - acknowledged_at, acknowledged_by, created_at
+
+### Audit Fields (System)
+- 🔒 **deleted_at** - Soft delete timestamp (NULL = active)
+- 🔒 **deleted_by** - User who deleted
+- 🔒 **deletion_reason** - Why deleted
 
 ---
 
@@ -220,4 +255,42 @@ Show: All transaction fields + sale_items breakdown
 
 ---
 
-**Note**: LOW priority fields can be hidden by default and shown in "More Details" expandable sections or admin-only views.
+---
+
+## 🔒 Audit System Impact
+
+### Soft Delete Behavior
+
+**All entities include audit fields** for compliance and traceability:
+- `deleted_at` - NULL for active records, timestamp when soft-deleted
+- `deleted_by` - User ID who performed the deletion
+- `deletion_reason` - Required reason for deletion
+
+### Query Impact
+
+**Default queries exclude soft-deleted records**:
+```sql
+SELECT * FROM customers WHERE deleted_at IS NULL;
+```
+
+**Audit queries include deleted records**:
+```sql
+SELECT * FROM customers; -- Includes soft-deleted
+```
+
+### Attestation Requirement
+
+All delete operations require user attestation: `"I CONFIRM DELETE"`
+
+This prevents accidental deletions and ensures conscious decision-making.
+
+### Data Retention
+
+✅ **No data loss** - All deleted records remain in database  
+✅ **Full audit trail** - Track who deleted what and why  
+✅ **Restore capability** - Can be un-deleted by clearing `deleted_at`  
+✅ **Compliance ready** - Meets regulatory requirements for data retention
+
+---
+
+**Note**: LOW priority fields can be hidden by default and shown in "More Details" expandable sections or admin-only views. Audit fields are system-managed and typically hidden from end users.

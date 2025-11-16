@@ -414,19 +414,89 @@ Daily wastage analysis by reason.
 
 ---
 
+## 🗑️ Delete Operations & Audit Trail
+
+### Soft Delete System
+
+**All entities support soft deletes** with audit trail preservation. No data is permanently removed.
+
+#### Audit Fields (All Tables)
+- `deleted_at` - Timestamp when deleted (NULL = not deleted)
+- `deleted_by` - User who performed deletion
+- `deletion_reason` - Required reason for deletion
+
+#### Attestation Requirement
+
+**All DELETE operations require user attestation** to prevent accidental data loss:
+
+```json
+DELETE /api/v1/inventory/{id}
+{
+  "reason": "Duplicate entry created by mistake",
+  "attestation": "I CONFIRM DELETE"
+}
+```
+
+The attestation string **must exactly match** `"I CONFIRM DELETE"` or the operation will be rejected.
+
+#### Soft Delete Behavior
+
+**Database Layer**:
+- Records are marked as deleted with `deleted_at = CURRENT_TIMESTAMP`
+- `deleted_by` is set to the authenticated user ID
+- `deletion_reason` stores the provided reason
+- Original data remains intact in the database
+
+**API Layer**:
+- Default queries exclude soft-deleted records (`WHERE deleted_at IS NULL`)
+- Special endpoints can retrieve deleted records for audit purposes
+- Restore functionality can be implemented by clearing `deleted_at`
+
+**Example**: Soft delete a wastage entry
+```sql
+UPDATE wastage_log
+SET deleted_at = CURRENT_TIMESTAMP,
+    deleted_by = 'user-uuid',
+    deletion_reason = 'Logged in error'
+WHERE id = 'wastage-uuid';
+```
+
+#### Entities with Soft Delete Support
+
+✅ **customers** - Customer accounts  
+✅ **inventory_items** - Inventory records  
+✅ **transactions** - Sales and payment records  
+✅ **sale_items** - Transaction line items  
+✅ **crate_ledger** - Crate tracking entries  
+✅ **wastage_log** - Wastage entries  
+✅ **expiry_alerts** - Alert records  
+✅ **payment_schedules** - Installment plans  
+
+#### Benefits of Soft Deletes
+
+🔒 **Compliance**: Full audit trail for regulatory requirements  
+🔍 **Forensics**: Investigate issues with complete historical data  
+↩️ **Recovery**: Restore accidentally deleted records  
+📊 **Reporting**: Historical analysis includes deleted records  
+🛡️ **Security**: Track who deleted what and why  
+
+---
+
 ## 🔧 Next Steps
 
-1. **Update Backend Handlers** - Modify Go API handlers to use new fields
-2. **Update Frontend Forms** - Add new fields to React forms
-3. **Build New Features**:
-   - Credit limit enforcement
-   - Payment plan creation
-   - Wastage log entry
-   - Expiry alert dashboard
-   - Profit analysis reports
-   - Overdue payment reminders
+1. ✅ **Backend Handlers Updated** - Go API handlers support all enhanced fields
+2. ✅ **Frontend Forms Updated** - React forms include all new fields
+3. ✅ **Features Implemented**:
+   - ✅ Credit limit enforcement
+   - ✅ Wastage log entry with photo upload
+   - ✅ Expiry alert dashboard with acknowledgment
+   - ✅ Profit analysis in reports
+   - ✅ Overdue payment tracking
+   - ✅ Soft delete with attestation
+   - ✅ Audit trail system
+   - ⏳ Payment plan creation (planned)
 
-4. **Seed Test Data** - Add sample data with new fields
+4. ✅ **Seed Test Data** - Demo data includes enhanced fields
 
 ---
 
@@ -435,8 +505,10 @@ Daily wastage analysis by reason.
 ✅ **Migration Applied**: November 16, 2025  
 ✅ **Database**: All new columns, tables, indexes, views created  
 ✅ **Triggers**: Auto-calculations active  
-⏳ **Backend**: Needs handler updates  
-⏳ **Frontend**: Needs UI updates
+✅ **Backend**: All handlers updated with CRUD operations  
+✅ **Frontend**: Full UI implementation complete  
+✅ **Audit System**: Soft deletes and attestation active  
+✅ **Delete Handlers**: Attestation-required delete endpoints deployed
 
 ---
 
