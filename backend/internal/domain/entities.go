@@ -2,80 +2,45 @@ package domain
 
 import "time"
 
-// CrateEntry represents a crate issue/return entry
-type CrateEntry struct {
-	ID             string
-	CustomerID     string
-	Date           time.Time
-	TransactionID  string
-	CratesIssued   int
-	CratesReturned int
-	Balance        int
-	CrateType      string
-	CrateValue     float64
-	Notes          string
-	UpdatedAt      time.Time
-	DeletedAt      *time.Time
-	DeletedBy      string
-	DeletionReason string
-}
-
-// Validate validates crate entry business rules
-func (c *CrateEntry) Validate() error {
-	if c.CustomerID == "" {
-		return ErrInvalidInput("customer ID is required")
-	}
-	if c.CratesIssued < 0 || c.CratesReturned < 0 {
-		return ErrInvalidInput("crate counts cannot be negative")
-	}
-	return nil
-}
-
-// WastageLog represents a wastage entry
-type WastageLog struct {
+// Crate represents a crate transaction (issue/return)
+type Crate struct {
 	ID              string
-	InventoryItemID string
-	ItemName        string
-	Quantity        float64
-	Unit            string
-	Reason          string // expired, damaged, spoiled, pest, other
-	ReasonDetails   string
-	CostValue       float64
-	LoggedBy        string
-	LoggedAt        time.Time
-	PhotoURL        string
-	DeletedAt       *time.Time
-	DeletedBy       string
-	DeletionReason  string
+	CustomerID      string
+	CustomerName    string
+	TransactionID   string
+	TransactionType string // "in" or "out"
+	Quantity        int
+	UnitPrice       float64
+	TotalPrice      float64
+	Notes           string
+	CreatedBy       string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
-// Validate validates wastage log business rules
-func (w *WastageLog) Validate() error {
-	if w.ItemName == "" {
-		return ErrInvalidInput("item name is required")
-	}
-	if w.Quantity <= 0 {
-		return ErrInvalidInput("quantity must be positive")
-	}
-	if w.Reason == "" {
-		return ErrInvalidInput("reason is required")
-	}
-	if !isValidWastageReason(w.Reason) {
-		return ErrInvalidInput("invalid wastage reason")
-	}
-	return nil
+// CrateEntry represents a crate issue/return entry (legacy alias)
+type CrateEntry = Crate
+
+// Wastage represents a wastage entry
+type Wastage struct {
+	ID          string
+	InventoryID string
+	ItemName    string
+	LotNumber   string
+	Quantity    float64
+	Unit        string
+	Reason      string
+	CostValue   float64
+	ExpiryDate  time.Time
+	Notes       string
+	RecordedBy  string
+	RecordedAt  time.Time
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
-func isValidWastageReason(reason string) bool {
-	validReasons := map[string]bool{
-		"expired": true,
-		"damaged": true,
-		"spoiled": true,
-		"pest":    true,
-		"other":   true,
-	}
-	return validReasons[reason]
-}
+// WastageLog represents a wastage entry (legacy alias)
+type WastageLog = Wastage
 
 // ExpiryAlert represents an expiry alert
 type ExpiryAlert struct {

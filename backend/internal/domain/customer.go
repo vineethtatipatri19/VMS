@@ -1,97 +1,95 @@
 package domain
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-}	return validStatuses[s]	}		"blocked":  true,		"inactive": true,		"active":   true,	validStatuses := map[string]bool{func isValidStatus(s string) bool {}	return validTypes[t]	}		"wholesale": true,		"retail":    true,		"b2c":       true,		"b2b":       true,	validTypes := map[string]bool{func isValidCustomerType(t string) bool {}	return c.CurrentBalance > 0	// This would need transaction data - placeholder logicfunc (c *Customer) IsOverdue() bool {// IsOverdue checks if customer has overdue payments}	return c.CurrentBalance+amount <= c.CreditLimit	}		return false	if c.Status != "active" {func (c *Customer) CanPurchase(amount float64) bool {// CanPurchase checks if customer can make a purchase}	return nil	}		return ErrInvalidInput("credit limit cannot be negative")	if c.CreditLimit < 0 {	}		return ErrInvalidInput("invalid status")	if c.Status != "" && !isValidStatus(c.Status) {	}		return ErrInvalidInput("invalid customer type")	if c.CustomerType != "" && !isValidCustomerType(c.CustomerType) {	}		return ErrInvalidInput("name is required")	if c.Name == "" {func (c *Customer) Validate() error {// Validate validates customer business rules}	Offset       int	Limit        int	SearchTerm   string	CustomerType string	Status       stringtype CustomerFilters struct {// CustomerFilters represents query filters for customers}	DeletionReason      string	DeletedBy           string	DeletedAt           *time.Time	UpdatedAt           time.Time	CreatedAt           time.Time	LoyaltyPoints       int	TotalPurchases      float64	LastTransactionDate *time.Time	Tags                []string	Notes               string	Status              string // active, inactive, blocked	InterestRate        float64	PaymentTermsDays    int	CurrentBalance      float64	CreditLimit         float64	KYCDocumentNumber   string	KYCDocumentType     string	AadhaarVerified     bool	CustomerType        string // b2b, b2c, retail, wholesale	GSTIN               string	BusinessName        string	PhotoURL            string	WhatsappNumber      string	AlternateContact    string	ContactNumber       string	Address             string	Email               string	Name                string	ID                  stringtype Customer struct {// Customer represents a customer entity with complete business fieldsimport "time"package domain
+import "time"
+
+// Customer represents a customer entity with complete business fields
+type Customer struct {
+	ID                  string
+	Name                string
+	Email               string
+	Address             string
+	ContactNumber       string
+	AlternateContact    string
+	WhatsappNumber      string
+	PhotoURL            string
+	BusinessName        string
+	GSTIN               string
+	CustomerType        string // b2b, b2c, retail, wholesale
+	AadhaarVerified     bool
+	KYCDocumentType     string
+	KYCDocumentNumber   string
+	CreditLimit         float64
+	CurrentBalance      float64
+	PaymentTermsDays    int
+	InterestRate        float64
+	Status              string // active, inactive, blocked
+	Notes               string
+	Tags                []string
+	LastTransactionDate *time.Time
+	TotalPurchases      float64
+	LoyaltyPoints       int
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+	DeletedAt           *time.Time
+	DeletedBy           string
+	DeletionReason      string
+}
+
+// CustomerFilters represents query filters for customers
+type CustomerFilters struct {
+	Status       string
+	CustomerType string
+	SearchTerm   string
+	Limit        int
+	Offset       int
+}
+
+// Validate validates customer business rules
+func (c *Customer) Validate() error {
+	if c.Name == "" {
+		return ErrInvalidInput("name is required")
+	}
+	if c.CustomerType != "" && !isValidCustomerType(c.CustomerType) {
+		return ErrInvalidInput("invalid customer type")
+	}
+	if c.Status != "" && !isValidStatus(c.Status) {
+		return ErrInvalidInput("invalid status")
+	}
+	if c.CreditLimit < 0 {
+		return ErrInvalidInput("credit limit cannot be negative")
+	}
+	return nil
+}
+
+// CanPurchase checks if customer can make a purchase
+func (c *Customer) CanPurchase(amount float64) bool {
+	if c.Status != "active" {
+		return false
+	}
+	return c.CurrentBalance+amount <= c.CreditLimit
+}
+
+// IsOverdue checks if customer has overdue payments
+// This would need transaction data - placeholder logic
+func (c *Customer) IsOverdue() bool {
+	return c.CurrentBalance > 0
+}
+
+func isValidCustomerType(t string) bool {
+	validTypes := map[string]bool{
+		"b2b":       true,
+		"b2c":       true,
+		"retail":    true,
+		"wholesale": true,
+	}
+	return validTypes[t]
+}
+
+func isValidStatus(s string) bool {
+	validStatuses := map[string]bool{
+		"active":   true,
+		"inactive": true,
+		"blocked":  true,
+	}
+	return validStatuses[s]
+}
