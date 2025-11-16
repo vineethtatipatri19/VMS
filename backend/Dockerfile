@@ -11,7 +11,6 @@ RUN go build -o pgvms .
 FROM alpine:3.18
 WORKDIR /app
 COPY --from=build /app/pgvms /app/pgvms
-COPY --from=build /app/../infra/migrations /app/infra/migrations
 ENV PORT=8080
 EXPOSE 8080
 CMD ["/app/pgvms"]

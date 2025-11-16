@@ -1,0 +1,50 @@
+1. Project Goal and Context
+Develop a comprehensive Perishable Goods Vendor Management System (PGVMS) as a cloud-based, mobile-friendly platform. The primary objective is to replace manual paper-based processes (like the Patti Book or Khata) with an integrated digital solution that manages high-volume sales, minimizes waste of perishable inventory, and maintains strict customer and regulatory compliance.
+2. Architectural and Security Requirements
+The system must be built with the following constraints:
+Architecture: Must be designed as a Cloud-Based SaaS solution, accessible via web and specialized mobile applications (Android/Windows).  
+Mobility: Critical functions (POS and Credit Ledger) must support robust Offline Usage with automatic, real-time synchronization when connectivity is restored to ensure business continuity in remote areas.  
+Security & Compliance: Implement role-based access control (SSO integration) and advanced encryption for sensitive data.  
+3. Core Functional Requirements (Modular Breakdown)
+Module A: Inventory Management (Perishables Focus)
+The inventory module must prioritize the perishable nature of the goods.
+Item Master: Inventory must track fresh produce (vegetables, fruits, etc.).
+Expiry Date Tracking: Each item must be tracked at the Lot/Batch level with a mandatory Expiry Date and/or calculated Shelf Life.  
+Rotation Enforcement (FEFO): The system must automatically enforce the First-Expired, First-Out (FEFO) principle for all order fulfillment and internal transfers to minimize waste.  
+Item Status: The system must prevent the booking or assignment of stock that is already past its designated Expiry Date.  
+New Item Addition: Provide an interface for creating and managing new inventory items and product variants.  
+Module B: Customer Management and Compliance (KYC)
+The customer management process must be compliant and rapid.
+Customer Onboarding: Systematically collect and store customer details including Name, Address, Contact Number, and Photo.  
+Mandatory KYC: Implement mandatory integration for Aadhaar eKYC Verification for instant, paperless identity verification via OTP or biometric authentication, especially for customers granted credit.  
+Compliance: The application and associated hardware must adhere to the UIDAI Registered Devices Specification for secure collection and transmission of Personal Identity Data (PID).  
+Credit History/Limits: Maintain records of the approved Credit Limit and track the Current Outstanding Balance.  
+Module C: Transaction and Financial Ledger (Patti Book)
+The system must digitalize the informal credit process (Patti Book).
+Patti Book Entry (CRUD): Implement full Create, Read, Update, and Delete (CRUD) functionality for all credit and payment transactions (the digital Patti Book/Khata).  
+Transaction Details: Record Customer details, Item, Weight/Quantity (box, lot, kgs/gms), and Price per transaction.  
+Automated Balancing: Automatically calculate and update the Receivable/Balance Amount instantly after every transaction.  
+Receipt Generation: Generate and provide options to print Customer Receipts (including transaction details) and Sales Receipts (summary of all transactions).  
+Integration: Require seamless integration with Weighing Scales to ensure accurate charges by weight at the Point-of-Sale (POS).  
+Module D: Returnable Asset Management (Crates Debt)
+The system must treat returnable crates as financial assets/liabilities.
+Crate Tracking: Maintain a dedicated ledger to track the physical movement of returnable assets (crates, boxes).  
+Automated Liability: Upon sale/dispatch, the system must automatically record the number of boxes taken by the customer and add this as a Crate Debt to a subsidiary ledger.  
+Return Reconciliation: Upon return of empty crates, the system must update the subsidiary ledger (reducing Crate Debt). It must also automatically flag discrepancies and generate an invoice for the replacement cost of any lost or damaged assets.  
+Crate Reports: Generate specific reports detailing the total number of boxes taken vs. returned by each customer.
+Module E: Reporting, Dashboards, and Intelligence
+The system must provide operational and predictive insights.
+Dashboards: Create intuitive Customer Transaction Dashboards (showing last few transactions, credit history, balance) and Sales Transaction Dashboards (summarizing business performance).
+Reports: Generate comprehensive Sales Reports (all customer transactions on a given day, date-filtered searches) and a detailed Crate Report.  
+Wastage Minimization & Forecast: Integrate an advanced AI/ML Forecasting Module (e.g., using LSTM or MoE models) to analyze historical sales, inventory, and spoilage data, and minimize wastage (shrinkage) by predicting demand and optimal purchasing. The model must also account for external factors like Weather Conditions and Seasonality.  
+4. Technical and Non-Functional Requirements
+Data Migration and Backfill: The system must support a seamless migration process, including meticulous data cleansing and secure Backfill of a minimum of two years of historical sales and spoilage data to train the AI forecasting models effectively.  
+No Data Loss: Ensure online and local backup of data to guarantee 100% safety and no data loss, even during hardware failure or migration.  
+Credit History: The ledger must provide a chronological history of customer transactions and payments.  
+5. Requested Output Structure
+The AI Studio should structure its response with the following elements:
+Data Model Schema (High-Level): Key tables (Inventory, Customer, Transaction, Crate Asset) and their critical fields (e.g., inventory.expiry_date, customer.aadhaar_id, transaction.crate_debt).
+API/Endpoint Plan: List the core APIs required (e.g., /api/transactions/crud, /api/inventory/fefo-recommendation, /api/kyc/aadhaar-verify).
+Component Breakdown: Outline the necessary UI/UX components (e.g., Mobile POS interface, Crate Return Form, Sales Dashboard).
+Initial Code Structure: Provide the foundational code structure for the Inventory Management module focusing on FEFO logic.
+

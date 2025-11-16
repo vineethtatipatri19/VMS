@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { forecastAPI } from '../services/api';
+import { Card, Button, Badge, Input } from '../components/ui';
+import { TrendingUp, Sparkles, Calendar } from 'lucide-react';
 
 function Forecasting() {
   const [itemName, setItemName] = useState('');
@@ -30,108 +32,137 @@ function Forecasting() {
 
   return (
     <div className="container">
-      <h1>AI-Powered Demand Forecasting</h1>
-      <p style={{ color: '#666', marginBottom: '20px' }}>
-        Generate demand forecasts using Google Gemini AI based on historical sales data
-      </p>
-
-      <div className="card">
-        <h2>Generate Forecast</h2>
-        <form onSubmit={handleGenerate}>
-          <div className="form-group">
-            <label>Item Name*</label>
-            <input
-              type="text"
-              value={itemName}
-              onChange={(e) => setItemName(e.target.value)}
-              placeholder="e.g., Tomato, Potato"
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>Forecast Period (days)*</label>
-            <input
-              type="number"
-              value={days}
-              onChange={(e) => setDays(e.target.value)}
-              min="1"
-              max="30"
-              required
-            />
-          </div>
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? 'Generating Forecast...' : 'Generate Forecast'}
-          </button>
-        </form>
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Sparkles size={28} style={{ color: 'var(--color-primary)' }} />
+          AI-Powered Demand Forecasting
+        </h1>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
+          Generate demand forecasts using Google Gemini AI based on historical sales data
+        </p>
       </div>
 
-      {error && <div className="error">{error}</div>}
+      <Card>
+        <h2 style={{ marginBottom: '20px', fontSize: '18px', fontWeight: '600' }}>Generate Forecast</h2>
+        <form onSubmit={handleGenerate}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* Forecast Parameters */}
+            <div>
+              <h3 style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '16px' }}>
+                Forecast Parameters
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <Input
+                  label="Item Name"
+                  type="text"
+                  value={itemName}
+                  onChangeText={setItemName}
+                  placeholder="e.g., Tomato, Potato, Onion"
+                  required
+                  fullWidth
+                />
+                <Input
+                  label="Forecast Period (days)"
+                  type="number"
+                  value={days}
+                  onChangeText={setDays}
+                  placeholder="7"
+                  min="1"
+                  max="30"
+                  leftIcon={<Calendar size={18} />}
+                  helperText="Enter number of days to forecast (1-30)"
+                  required
+                  fullWidth
+                />
+              </div>
+            </div>
+
+            {/* Generate Button */}
+            <div style={{ paddingTop: '4px' }}>
+              <Button 
+                type="submit" 
+                variant="primary" 
+                loading={loading}
+                leftIcon={<TrendingUp size={20} />}
+                fullWidth
+                style={{ padding: '14px' }}
+              >
+                {loading ? 'Generating Forecast...' : 'Generate AI Forecast'}
+              </Button>
+            </div>
+          </div>
+        </form>
+      </Card>
+
+      {error && <div className="error" style={{ marginTop: '20px', padding: '16px', backgroundColor: 'var(--color-danger-light)', color: 'var(--color-danger)', borderRadius: '8px' }}>{error}</div>}
 
       {forecast && (
-        <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h2>Forecast Results for {forecast.itemName}</h2>
-            <span className="badge badge-info">
+        <Card style={{ marginTop: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '600' }}>Forecast Results for {forecast.itemName}</h2>
+            <Badge variant="info" size="md">
               Confidence: {forecast.confidence}
-            </span>
+            </Badge>
           </div>
           
-          <p style={{ color: '#666', fontSize: '14px', marginBottom: '20px' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '20px' }}>
             Generated at: {new Date(forecast.generatedAt).toLocaleString()}
           </p>
 
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Predicted Demand</th>
-                <th>Unit</th>
-              </tr>
-            </thead>
-            <tbody>
-              {forecast.predictions.map((pred, idx) => (
-                <tr key={idx}>
-                  <td>{pred.date}</td>
-                  <td>{pred.quantity.toFixed(2)}</td>
-                  <td>{pred.unit}</td>
+          <div style={{ overflowX: 'auto' }}>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th style={{ textAlign: 'right' }}>Predicted Demand</th>
+                  <th>Unit</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {forecast.predictions.map((pred, idx) => (
+                  <tr key={idx}>
+                    <td style={{ color: 'var(--text-secondary)' }}>{pred.date}</td>
+                    <td style={{ textAlign: 'right', fontWeight: '600', color: 'var(--text-primary)' }}>{pred.quantity.toFixed(2)}</td>
+                    <td style={{ color: 'var(--text-secondary)' }}>{pred.unit}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-          <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
-            <h3 style={{ marginTop: 0 }}>Summary</h3>
-            <p>
+          <div style={{ marginTop: '20px', padding: '16px', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px' }}>
+            <h3 style={{ marginTop: 0, fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)' }}>Summary</h3>
+            <p style={{ color: 'var(--text-primary)' }}>
               <strong>Average Daily Demand:</strong>{' '}
               {(forecast.predictions.reduce((sum, p) => sum + p.quantity, 0) / forecast.predictions.length).toFixed(2)}{' '}
               {forecast.predictions[0]?.unit}
             </p>
-            <p>
+            <p style={{ color: 'var(--text-primary)' }}>
               <strong>Total Forecast:</strong>{' '}
               {forecast.predictions.reduce((sum, p) => sum + p.quantity, 0).toFixed(2)}{' '}
               {forecast.predictions[0]?.unit}
             </p>
           </div>
-        </div>
+        </Card>
       )}
 
-      <div className="card">
-        <h3>About AI Forecasting</h3>
-        <p>
+      <Card style={{ marginTop: '24px' }}>
+        <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: 'var(--text-primary)' }}>About AI Forecasting</h3>
+        <p style={{ color: 'var(--text-primary)' }}>
           This feature uses Google Gemini AI to analyze your historical sales data and predict future demand.
           The AI considers:
         </p>
-        <ul>
+        <ul style={{ color: 'var(--text-primary)' }}>
           <li>Historical sales trends and patterns</li>
           <li>Seasonal variations</li>
           <li>Day of week effects</li>
           <li>Typical demand patterns for perishable goods</li>
         </ul>
-        <p style={{ fontSize: '14px', color: '#666', marginTop: '15px' }}>
+        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginTop: '15px' }}>
           Note: To enable AI forecasting, set the GEMINI_API_KEY environment variable. 
           Without an API key, the system will generate simple stub forecasts.
         </p>
-      </div>
+      </Card>
     </div>
   );
 }

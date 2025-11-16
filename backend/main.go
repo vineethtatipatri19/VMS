@@ -1,4 +1,3 @@
-
 package main
 
 import (
@@ -10,9 +9,9 @@ import (
 	"os"
 	"time"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 var db *sql.DB
@@ -23,7 +22,7 @@ func main() {
 	if jwtSecret != "" {
 		jwtKey = []byte(jwtSecret)
 	}
-	
+
 	dsn := os.Getenv("DATABASE_URL") // expected: postgres://user:pass@host:5432/dbname
 	if dsn == "" {
 		log.Fatal("DATABASE_URL env var required")
@@ -48,55 +47,77 @@ func main() {
 	}
 
 	r := chi.NewRouter()
-	
+
 	// Middleware
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(corsMiddleware)
-	
+
 	r.Route("/api/v1", func(r chi.Router) {
 		// Public routes
 		r.Post("/register", registerHandler)
 		r.Post("/login", loginHandler)
-		
+
 		// Protected routes
 		r.Group(func(rr chi.Router) {
 			rr.Use(authMiddleware)
-			
+
 			// Health check
 			rr.Get("/health", healthHandler)
-			
+
 			// Dashboard
 			rr.Get("/dashboard", dashboardHandler)
 			rr.Get("/dashboard/activity", recentActivityHandler)
-			
+
 			// Inventory
 			rr.Get("/inventory", listInventory)
 			rr.Post("/inventory", createInventory)
 			rr.Get("/inventory/{id}", getInventoryItem)
 			rr.Put("/inventory/{id}", updateInventory)
 			rr.Delete("/inventory/{id}", deleteInventory)
-			
+
 			// Customers
 			rr.Get("/customers", listCustomers)
 			rr.Post("/customers", createCustomer)
 			rr.Get("/customers/{id}", getCustomer)
 			rr.Put("/customers/{id}", updateCustomer)
 			rr.Delete("/customers/{id}", deleteCustomer)
-			
+
 			// Transactions
 			rr.Get("/transactions", listTransactions)
 			rr.Post("/transactions", createTransaction)
 			rr.Get("/transactions/{id}", getTransaction)
-			
+			rr.Put("/transactions/{id}", updateTransaction)
+			rr.Delete("/transactions/{id}", deleteTransaction)
+
 			// Crates
 			rr.Get("/crates", listCrates)
 			rr.Post("/crates", createCrateEntry)
+			rr.Put("/crates/{id}", updateCrateEntry)
+			rr.Delete("/crates/{id}", deleteCrateEntry)
 			rr.Get("/crates/balance/{customerId}", getCrateBalance)
-			
+
+			// Wastage tracking
+			rr.Get("/wastage", listWastage)
+			rr.Post("/wastage", createWastage)
+			rr.Put("/wastage/{id}", updateWastage)
+			rr.Delete("/wastage/{id}", deleteWastage)
+
+			// Expiry alerts
+			rr.Get("/expiry-alerts", listExpiryAlerts)
+			rr.Put("/expiry-alerts/{id}", updateExpiryAlert)
+			rr.Delete("/expiry-alerts/{id}", deleteExpiryAlert)
+
+			// Payment schedules
+			rr.Get("/payment-schedules", listPaymentSchedules)
+
+			// Reports & Views
+			rr.Get("/reports/overdue-payments", getOverduePayments)
+			rr.Get("/reports/wastage-summary", getWastageSummary)
+
 			// Forecasting (AI)
 			rr.Post("/forecast", forecastHandler)
-			
+
 			// Reports
 			rr.Post("/reports/generate", generateReportHandler)
 		})
@@ -121,13 +142,12 @@ func corsMiddleware(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-		
+
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
 			return
 		}
-		
+
 		next.ServeHTTP(w, r)
 	})
 }
-

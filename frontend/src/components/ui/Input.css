@@ -1,0 +1,132 @@
+.input-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.input-full-width {
+  width: 100%;
+}
+
+.input-label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  line-height: var(--line-height-normal);
+}
+
+.input-required {
+  color: var(--color-danger);
+  margin-left: 2px;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input {
+  width: 100%;
+  font-family: inherit;
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-base);
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-bg);
+}
+
+.input:disabled {
+  background-color: var(--bg-tertiary);
+  color: var(--text-tertiary);
+  cursor: not-allowed;
+}
+
+.input::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* Input Sizes */
+.input-sm {
+  height: var(--input-height-sm);
+  padding: 0 var(--spacing-md);
+  font-size: var(--font-size-sm);
+}
+
+.input-md {
+  height: var(--input-height-md);
+  padding: 0 var(--spacing-md);
+}
+
+.input-lg {
+  height: var(--input-height-lg);
+  padding: 0 var(--spacing-lg);
+  font-size: var(--font-size-lg);
+}
+
+/* Input with Icons */
+.input-with-left-icon {
+  padding-left: 40px;
+}
+
+.input-with-right-icon {
+  padding-right: 40px;
+}
+
+.input-icon-left,
+.input-icon-right {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+.input-icon-left {
+  left: var(--spacing-md);
+}
+
+.input-icon-right {
+  right: var(--spacing-md);
+}
+
+/* Error State */
+.input-error {
+  border-color: var(--color-danger);
+}
+
+.input-error:focus {
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 3px var(--color-danger-bg);
+}
+
+.input-error-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-danger);
+  line-height: var(--line-height-normal);
+}
+
+.input-helper-text {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: var(--line-height-normal);
+}
+
+/* Mobile Optimization */
+@media (max-width: 768px) {
+  .input {
+    font-size: 16px; /* Prevents iOS zoom on focus */
+  }
+}

@@ -1,0 +1,112 @@
+.select-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.select-full-width {
+  width: 100%;
+}
+
+.select-label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  line-height: var(--line-height-normal);
+}
+
+.select-required {
+  color: var(--color-danger);
+  margin-left: 2px;
+}
+
+.select-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.select {
+  width: 100%;
+  font-family: inherit;
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-base);
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+  padding-right: 40px; /* Space for icon */
+}
+
+.select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-bg);
+}
+
+.select:disabled {
+  background-color: var(--bg-tertiary);
+  color: var(--text-tertiary);
+  cursor: not-allowed;
+}
+
+/* Select Sizes */
+.select-sm {
+  height: var(--input-height-sm);
+  padding: 0 var(--spacing-md);
+  font-size: var(--font-size-sm);
+}
+
+.select-md {
+  height: var(--input-height-md);
+  padding: 0 var(--spacing-md);
+}
+
+.select-lg {
+  height: var(--input-height-lg);
+  padding: 0 var(--spacing-lg);
+  font-size: var(--font-size-lg);
+}
+
+/* Select Icon */
+.select-icon {
+  position: absolute;
+  right: var(--spacing-md);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+/* Error State */
+.select-error {
+  border-color: var(--color-danger);
+}
+
+.select-error:focus {
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 3px var(--color-danger-bg);
+}
+
+.select-error-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-danger);
+  line-height: var(--line-height-normal);
+}
+
+.select-helper-text {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: var(--line-height-normal);
+}
+
+/* Mobile Optimization */
+@media (max-width: 768px) {
+  .select {
+    font-size: 16px; /* Prevents iOS zoom on focus */
+  }
+}

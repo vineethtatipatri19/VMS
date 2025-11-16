@@ -1,0 +1,391 @@
+✅ 1. Business Login
+Goal: Each vendor/business should have its own secure account.
+Implementation:
+Business registration and login (email/phone + password or OTP).
+
+
+Role-based access (Admin, Staff, Viewer).
+
+
+JWT or OAuth2 authentication.
+
+
+Each business gets its own isolated database schema or tenant ID.
+
+
+Handled: ✔️ Multi-tenant architecture.
+
+✅ 2. Inventory (Vegetables/Fruits, etc.)
+Goal: Manage all inventory items — fruits, vegetables, etc.
+Implementation:
+Inventory table with fields:
+
+
+item_id, name, category, unit (kg, box, lot), price, current_stock.
+
+
+Add, update, delete items (CRUD).
+
+
+Auto-update on every sale or purchase.
+
+
+Support for different units (kgs, lots, boxes).
+
+
+Handled: ✔️ Add/update items, auto inventory tracking.
+
+✅ 3. Customer Onboarding
+Goal: Register and manage customers easily.
+Fields:
+Name
+
+
+Contact Number
+
+
+Aadhar (optional or encrypted)
+
+
+Address
+
+
+Photo (upload)
+
+
+Opening balance / Crate balance
+
+
+Implementation:
+Customer table linked to Business ID.
+
+
+Photo upload via storage (AWS S3 / Firebase).
+
+
+Option to scan Aadhaar QR for quick onboarding.
+
+
+Handled: ✔️ Full onboarding with identification.
+
+✅ 4. Patti Book Entry Form (Transactions CRUD)
+Goal: Record and manage daily transactions.
+Fields:
+Customer
+
+
+Item
+
+
+Quantity/Weight (Box, Lot, Kg/Gm)
+
+
+Price per unit
+
+
+Date/Time
+
+
+Notes
+
+
+Payment Mode (Cash, UPI, Credit)
+
+
+Implementation:
+Transaction table linked to:
+
+
+Customer ID
+
+
+Item ID
+
+
+Business ID
+
+
+CRUD operations with validations.
+
+
+Auto-update inventory + crate count.
+
+
+Handled: ✔️ Full CRUD on transaction entries.
+
+✅ 5. Customer Receipts
+Goal: Generate and print digital receipts for each transaction.
+Features:
+Auto-generate PDF receipt after each Patti entry.
+
+
+Include:
+
+
+Business name/logo
+
+
+Customer details
+
+
+Items list
+
+
+Total, discounts, taxes
+
+
+Balance amount
+
+
+Crate summary
+
+
+Option to:
+
+
+Print directly
+
+
+Send via WhatsApp/email
+
+
+Handled: ✔️ Printable and digital receipts.
+
+✅ 6. Search, Filter & History
+Goal: Easily find customer data and past transactions.
+Features:
+Search by name or phone number.
+
+
+Filter by date range.
+
+
+View last few transactions per customer.
+
+
+“Recent Activity” widget on dashboard.
+
+
+Handled: ✔️ Search + filtering tools for usability.
+
+✅ 7. Receivable / Balance Amount Tracking
+Goal: Know how much each customer owes.
+Features:
+Auto-update outstanding balance per transaction.
+
+
+Track:
+
+
+Credit sales
+
+
+Payments received
+
+
+Separate “Receivables” report showing:
+
+
+Customer name
+
+
+Balance amount
+
+
+Last transaction date
+
+
+Handled: ✔️ Automated balance tracking.
+
+✅ 8. Customer Reports & Dashboards
+Goal: Summarize all customer-related data visually.
+Features:
+Transaction count, total spend, average purchase value.
+
+
+Crate summary (Taken vs Returned).
+
+
+Balance due.
+
+
+Graphs for trends over time.
+
+
+Handled: ✔️ Customer-level dashboards.
+
+✅ 9. Sales Receipts (Daily Summary)
+Goal: View all sales of all customers on a given day.
+Features:
+Generate daily report by date.
+
+
+Export/print sales summary.
+
+
+Include:
+
+
+Total sales of transactions
+
+
+Total crates out
+
+
+Payments received
+
+
+Handled: ✔️ Sales report and receipts per day.
+
+✅ 10. Sales Dashboard
+Goal: Business overview dashboard.
+Features:
+Total revenue this week/month.
+
+
+Top-selling items.
+
+
+Crates in/out summary.
+
+
+Outstanding receivables.
+
+
+Forecasted sales and stock.
+
+
+Handled: ✔️ Business analytics and forecasting.
+
+✅ 11. Crate Reports
+Goal: Track crates given and returned for each customer.
+Implementation:
+Crate table linked to customer:
+
+
+crate_id, customer_id, crates_given, crates_returned, balance.
+
+
+Auto-update after each transaction or crate return entry.
+
+
+Alerts for pending returns.
+
+
+Handled: ✔️ Real-time crate balance tracking.
+
+✅ 12. Credit History
+Goal: Maintain detailed payment and credit record.
+Features:
+Record every credit/debit adjustment.
+
+
+Link to transactions.
+
+
+Show credit timeline per customer.
+
+
+Optional credit limit enforcement.
+
+
+Handled: ✔️ Transparent credit tracking.
+
+✅ 13. Online Software (Cloud-Based)
+Goal: Always accessible, secure, and synced.
+Implementation:
+Cloud-hosted (AWS / Firebase / GCP).
+
+
+Role-based multi-login.
+
+
+Progressive Web App (PWA) for offline mode.
+
+
+Daily automatic backups.
+
+
+Handled: ✔️ Fully online, reliable, and portable.
+
+✅ 14. Forecast & Wastage Minimization
+Goal: Predict stock needs and minimize waste.
+Implementation:
+Use historical sales to:
+
+
+Predict demand.
+
+
+Flag overstocked items.
+
+
+Recommend reorder levels.
+
+
+Handled: ✔️ Data-driven forecasting (AI-ready).
+
+✅ 15. Data Migration & Backfill
+Goal: Ensure seamless transition and no data loss.
+Implementation:
+Bulk upload CSV/Excel for existing data.
+
+
+Migration scripts for legacy formats.
+
+
+Backup + restore mechanism.
+
+
+Change logs and data audit trail.
+
+
+Handled: ✔️ Secure migration and data integrity.
+
+🧱 Summary Table
+Requirement
+Status
+Key Features
+Business Login
+✅
+Multi-tenant authentication
+Inventory Mgmt
+✅
+CRUD, Units, Auto stock update
+Customer Onboarding
+✅
+Aadhaar, Photo, Address
+Patti Entry
+✅
+CRUD, Item linkage
+Receipts
+✅
+Printable + Digital
+Search/Filters
+✅
+Name/date filters
+Receivables
+✅
+Auto balance tracking
+Customer Reports
+✅
+Transactions & trends
+Sales Reports
+✅
+Daily summaries
+Crate Reports
+✅
+Out vs Returned
+Credit History
+✅
+Timeline + limits
+Online Software
+✅
+Cloud + Offline mode
+Forecast
+✅
+Predictive analytics
+Data Migration
+✅
+Import/export + Audit trail
+

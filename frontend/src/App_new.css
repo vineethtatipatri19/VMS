@@ -1,0 +1,194 @@
+/* ==========================================
+   MODERN UI DESIGN SYSTEM - 2025
+   ========================================== */
+
+@import './styles/variables.css';
+
+/* ==========================================
+   GLOBAL RESETS & BASE STYLES
+   ========================================== */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  background: linear-gradient(135deg, #f0f4ff 0%, #f8fafc 50%, #fef3f8 100%);
+  background-attachment: fixed;
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+  min-height: 100vh;
+  letter-spacing: -0.011em;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #1e1b4b 100%);
+    background-attachment: fixed;
+    color: #f9fafb;
+  }
+}
+
+/* ==========================================
+   TYPOGRAPHY SYSTEM
+   ========================================== */
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-tight);
+  line-height: var(--line-height-tight);
+  margin: 0 0 var(--spacing-lg) 0;
+  color: var(--text-primary);
+}
+
+h1 { 
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-extrabold);
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--spacing-2xl);
+}
+
+h2 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+}
+
+h3 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+}
+
+h4 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+p {
+  margin: 0 0 var(--spacing-base) 0;
+  line-height: var(--line-height-relaxed);
+  color: var(--text-secondary);
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+  font-weight: var(--font-weight-medium);
+}
+
+a:hover {
+  color: var(--color-primary-dark);
+}
+
+@media (prefers-color-scheme: dark) {
+  h1 {
+    -webkit-text-fill-color: #f9fafb;
+    background: none;
+    color: #f9fafb;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    color: #f9fafb;
+  }
+  
+  p {
+    color: #d1d5db;
+  }
+}
+
+/* ==========================================
+   CONTAINER & LAYOUT
+   ========================================== */
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--spacing-2xl);
+  animation: fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: var(--spacing-lg);
+  }
+}
+
+/* ==========================================
+   MODERN CARD DESIGN
+   ========================================== */
+
+.card {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-radius: var(--radius-2xl);
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.02),
+    0 4px 12px rgba(0, 0, 0, 0.03),
+    0 16px 32px rgba(0, 0, 0, 0.04);
+  padding: var(--spacing-2xl);
+  margin-bottom: var(--spacing-2xl);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  transition: all var(--transition-smooth);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.04),
+    0 16px 32px rgba(0, 0, 0, 0.06),
+    0 24px 48px rgba(0, 0, 0, 0.08);
+}
+
+.card:hover::before {
+  opacity: 1;
+}
+
+@media (prefers-color-scheme: dark) {
+  .card {
+    background: rgba(30, 41, 59, 0.92);
+    border: 1px solid rgba(71, 85, 105, 0.4);
+    box-shadow: 
+      0 1px 3px rgba(0, 0, 0, 0.15),
+      0 4px 12px rgba(0, 0, 0, 0.2),
+      0 16px 32px rgba(0, 0, 0, 0.25);
+  }
+  
+  .card:hover {
+    box-shadow: 
+      0 4px 12px rgba(0, 0, 0, 0.2),
+      0 16px 32px rgba(0, 0, 0, 0.3),
+      0 24px 48px rgba(0, 0, 0, 0.35);
+  }
+}
