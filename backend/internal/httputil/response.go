@@ -1,116 +1,114 @@
 package httputil
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-}	return nil	}		return domain.ErrInvalidInput("invalid JSON body")	if err := json.NewDecoder(r.Body).Decode(v); err != nil {func DecodeJSON(r *http.Request, v interface{}) error {// DecodeJSON decodes JSON request body}	}		}			Message: "An internal error occurred",			Code:    "INTERNAL_ERROR",		return http.StatusInternalServerError, &ErrorData{		// Generic internal server error	default:		}			Message: err.Error(),			Code:    "MISSING_REASON",		return http.StatusBadRequest, &ErrorData{	case errors.Is(err, domain.ErrMissingReason):		}			Message: err.Error(),			Code:    "INVALID_ATTESTATION",		return http.StatusBadRequest, &ErrorData{	case errors.Is(err, domain.ErrInvalidAttestation):		}			Message: err.Error(),			Code:    "FORBIDDEN",		return http.StatusForbidden, &ErrorData{	case errors.Is(err, domain.ErrForbidden):		}			Message: err.Error(),			Code:    "UNAUTHORIZED",		return http.StatusUnauthorized, &ErrorData{	case errors.Is(err, domain.ErrUnauthorized):		}			Message: err.Error(),			Code:    "ALREADY_EXISTS",		return http.StatusConflict, &ErrorData{	case errors.Is(err, domain.ErrAlreadyExists):		}			Message: err.Error(),			Code:    "NOT_FOUND",		return http.StatusNotFound, &ErrorData{	case errors.Is(err, domain.ErrNotFound):	switch {	// Check for common domain errors	}		}			Message: businessErr.Message,			Code:    businessErr.Code,		return http.StatusUnprocessableEntity, &ErrorData{	if errors.As(err, &businessErr) {	var businessErr *domain.BusinessError	// Check for business errors	}		}			Field:   validationErr.Field,			Message: validationErr.Message,			Code:    "VALIDATION_ERROR",		return http.StatusBadRequest, &ErrorData{	if errors.As(err, &validationErr) {	var validationErr *domain.ValidationError	// Check for validation errorsfunc mapError(err error) (int, *ErrorData) {// mapError maps domain errors to HTTP status codes and error data}	})		Error:   errData,		Success: false,	json.NewEncoder(w).Encode(Response{	w.WriteHeader(statusCode)	w.Header().Set("Content-Type", "application/json")	statusCode, errData := mapError(err)func SendError(w http.ResponseWriter, err error) {// SendError sends an error JSON response}	})		Data:    data,		Success: statusCode < 400,	json.NewEncoder(w).Encode(Response{	w.WriteHeader(statusCode)	w.Header().Set("Content-Type", "application/json")func SendJSON(w http.ResponseWriter, statusCode int, data interface{}) {// SendJSON sends a JSON response}	Field   string `json:"field,omitempty"`	Message string `json:"message"`	Code    string `json:"code"`type ErrorData struct {// ErrorData represents error details in API response}	Error   *ErrorData  `json:"error,omitempty"`	Data    interface{} `json:"data,omitempty"`	Success bool        `json:"success"`type Response struct {// Response represents a standard API response)	"github.com/yourusername/vms/backend/internal/domain"	"net/http"	"errors"	"encoding/json"import (package httputil
+import (
+	"encoding/json"
+	"errors"
+	"net/http"
+
+	"github.com/example/pgvms/internal/domain"
+)
+
+// Response represents a standard API response
+type Response struct {
+	Success bool        `json:"success"`
+	Data    interface{} `json:"data,omitempty"`
+	Error   *ErrorData  `json:"error,omitempty"`
+}
+
+// ErrorData represents error details in API response
+type ErrorData struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+	Field   string `json:"field,omitempty"`
+}
+
+// SendJSON sends a JSON response
+func SendJSON(w http.ResponseWriter, statusCode int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	json.NewEncoder(w).Encode(Response{
+		Success: statusCode < 400,
+		Data:    data,
+	})
+}
+
+// SendError sends an error JSON response
+func SendError(w http.ResponseWriter, err error) {
+	statusCode, errData := mapError(err)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	json.NewEncoder(w).Encode(Response{
+		Success: false,
+		Error:   errData,
+	})
+}
+
+// mapError maps domain errors to HTTP status codes and error data
+func mapError(err error) (int, *ErrorData) {
+	// Check for validation errors
+	var validationErr *domain.ValidationError
+	if errors.As(err, &validationErr) {
+		return http.StatusBadRequest, &ErrorData{
+			Code:    "VALIDATION_ERROR",
+			Message: validationErr.Message,
+			Field:   validationErr.Field,
+		}
+	}
+
+	// Check for business errors
+	var businessErr *domain.BusinessError
+	if errors.As(err, &businessErr) {
+		return http.StatusUnprocessableEntity, &ErrorData{
+			Code:    businessErr.Code,
+			Message: businessErr.Message,
+		}
+	}
+
+	// Check for common domain errors
+	switch {
+	case errors.Is(err, domain.ErrNotFound):
+		return http.StatusNotFound, &ErrorData{
+			Code:    "NOT_FOUND",
+			Message: err.Error(),
+		}
+	case errors.Is(err, domain.ErrAlreadyExists):
+		return http.StatusConflict, &ErrorData{
+			Code:    "ALREADY_EXISTS",
+			Message: err.Error(),
+		}
+	case errors.Is(err, domain.ErrUnauthorized):
+		return http.StatusUnauthorized, &ErrorData{
+			Code:    "UNAUTHORIZED",
+			Message: err.Error(),
+		}
+	case errors.Is(err, domain.ErrForbidden):
+		return http.StatusForbidden, &ErrorData{
+			Code:    "FORBIDDEN",
+			Message: err.Error(),
+		}
+	case errors.Is(err, domain.ErrInvalidAttestation):
+		return http.StatusBadRequest, &ErrorData{
+			Code:    "INVALID_ATTESTATION",
+			Message: err.Error(),
+		}
+	case errors.Is(err, domain.ErrMissingReason):
+		return http.StatusBadRequest, &ErrorData{
+			Code:    "MISSING_REASON",
+			Message: err.Error(),
+		}
+	default:
+		// Generic internal server error
+		return http.StatusInternalServerError, &ErrorData{
+			Code:    "INTERNAL_ERROR",
+			Message: "An internal error occurred",
+		}
+	}
+}
+
+// DecodeJSON decodes JSON request body
+func DecodeJSON(r *http.Request, v interface{}) error {
+	if err := json.NewDecoder(r.Body).Decode(v); err != nil {
+		return domain.ErrInvalidInput("invalid JSON body")
+	}
+	return nil
+}
