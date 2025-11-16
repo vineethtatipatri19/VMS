@@ -7,35 +7,125 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
 
 // sale request structure expects items with inventoryLotId, quantity, pricePerUnit
 type SaleItemRequest struct {
 	InventoryLotId string  `json:"inventoryLotId"`
-	ItemName string           `json:"itemName"`
-	Quantity float64         `json:"quantity"`
-	Unit string               `json:"unit"`
-	PricePerUnit float64      `json:"pricePerUnit"`
+	ItemName       string  `json:"itemName"`
+	Quantity       float64 `json:"quantity"`
+	Unit           string  `json:"unit"`
+	PricePerUnit   float64 `json:"pricePerUnit"`
 }
 
 type TransactionRequest struct {
-	CustomerId string `json:"customerId"`
-	Type string `json:"type"` // 'sale' or 'payment'
-	PaymentAmount *float64 `json:"paymentAmount,omitempty"`
-	Items []SaleItemRequest `json:"items,omitempty"`
+	CustomerId    string            `json:"customerId"`
+	Type          string            `json:"type"` // 'sale' or 'payment'
+	PaymentAmount *float64          `json:"paymentAmount,omitempty"`
+	Items         []SaleItemRequest `json:"items,omitempty"`
+}
+
+type Transaction struct {
+	ID            string            `json:"id"`
+	CustomerID    string            `json:"customerId"`
+	Date          time.Time         `json:"date"`
+	Type          string            `json:"type"`
+	PaymentAmount *float64          `json:"paymentAmount,omitempty"`
+	TotalAmount   float64           `json:"totalAmount"`
+	Details       json.RawMessage   `json:"details,omitempty"`
+	CreatedAt     time.Time         `json:"createdAt"`
+}
+
+// Handler for listing transactions
+func listTransactions(w http.ResponseWriter, r *http.Request) {
+	customerID := r.URL.Query().Get("customerId")
+	txType := r.URL.Query().Get("type")
+	
+	query := `
+		SELECT id, customer_id, date, type, payment_amount, total_amount, details, created_at 
+		FROM transactions 
+		WHERE 1=1`
+	
+	args := []interface{}{}
+	argCount := 0
+	
+	if customerID != "" {
+		argCount++
+		query += ` AND customer_id=$` + string(rune('0'+argCount))
+		args = append(args, customerID)
+	}
+	
+	if txType != "" {
+		argCount++
+		query += ` AND type=$` + string(rune('0'+argCount))
+		args = append(args, txType)
+	}
+	
+	query += ` ORDER BY date DESC, created_at DESC`
+	
+	rows, err := db.QueryContext(r.Context(), query, args...)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	defer rows.Close()
+	
+	transactions := []Transaction{}
+	for rows.Next() {
+		var tx Transaction
+		if err := rows.Scan(&tx.ID, &tx.CustomerID, &tx.Date, &tx.Type, &tx.PaymentAmount, &tx.TotalAmount, &tx.Details, &tx.CreatedAt); err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		transactions = append(transactions, tx)
+	}
+	
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(transactions)
+}
+
+// Handler for getting a single transaction
+func getTransaction(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	var tx Transaction
+	err := db.QueryRowContext(r.Context(), `
+		SELECT id, customer_id, date, type, payment_amount, total_amount, details, created_at 
+		FROM transactions WHERE id=$1`, id).Scan(&tx.ID, &tx.CustomerID, &tx.Date, &tx.Type, &tx.PaymentAmount, &tx.TotalAmount, &tx.Details, &tx.CreatedAt)
+	
+	if err == sql.ErrNoRows {
+		http.Error(w, "transaction not found", 404)
+		return
+	}
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(tx)
 }
 
 func createTransaction(w http.ResponseWriter, r *http.Request) {
 	var tr TransactionRequest
-	if err := json.NewDecoder(r.Body).Decode(&tr); err!=nil { http.Error(w, err.Error(), 400); return }
-	if tr.Type != "sale" && tr.Type != "payment" { http.Error(w, "invalid type", 400); return }
+	if err := json.NewDecoder(r.Body).Decode(&tr); err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	if tr.Type != "sale" && tr.Type != "payment" {
+		http.Error(w, "invalid type", 400)
+		return
+	}
 	// For sales: validate and perform in DB transaction
 	ctx := r.Context()
 	tx, err := db.BeginTx(ctx, &sql.TxOptions{})
-	if err!=nil { http.Error(w, err.Error(), 500); return }
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
 	defer func() {
-		if p := recover(); p!=nil {
+		if p := recover(); p != nil {
 			tx.Rollback()
 			panic(p)
 		}
@@ -49,22 +139,44 @@ func createTransaction(w http.ResponseWriter, r *http.Request) {
 			// fetch current qty
 			var currentQty float64
 			err := tx.QueryRowContext(ctx, `SELECT quantity FROM inventory_items WHERE id=$1 FOR UPDATE`, it.InventoryLotId).Scan(&currentQty)
-			if err==sql.ErrNoRows { tx.Rollback(); http.Error(w, "inventory not found", 400); return }
-			if err!=nil { tx.Rollback(); http.Error(w, err.Error(), 500); return }
-			if currentQty < it.Quantity { tx.Rollback(); http.Error(w, "insufficient inventory", 400); return }
+			if err == sql.ErrNoRows {
+				tx.Rollback()
+				http.Error(w, "inventory not found", 400)
+				return
+			}
+			if err != nil {
+				tx.Rollback()
+				http.Error(w, err.Error(), 500)
+				return
+			}
+			if currentQty < it.Quantity {
+				tx.Rollback()
+				http.Error(w, "insufficient inventory", 400)
+				return
+			}
 			// decrement
 			newQty := currentQty - it.Quantity
 			_, err = tx.ExecContext(ctx, `UPDATE inventory_items SET quantity=$1, updated_at=now() WHERE id=$2`, newQty, it.InventoryLotId)
-			if err!=nil { tx.Rollback(); http.Error(w, err.Error(), 500); return }
+			if err != nil {
+				tx.Rollback()
+				http.Error(w, err.Error(), 500)
+				return
+			}
 			// insert sale_items later after transaction inserted
 			total += it.Quantity * it.PricePerUnit
 		}
+	} else if tr.Type == "payment" && tr.PaymentAmount != nil {
+		total = *tr.PaymentAmount
 	}
 	// insert transaction row
 	details, _ := json.Marshal(tr.Items)
 	_, err = tx.ExecContext(ctx, `INSERT INTO transactions(id,customer_id,date,type,payment_amount,total_amount,details,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
 		id, tr.CustomerId, now, tr.Type, tr.PaymentAmount, total, string(details), now)
-	if err!=nil { tx.Rollback(); http.Error(w, err.Error(), 500); return }
+	if err != nil {
+		tx.Rollback()
+		http.Error(w, err.Error(), 500)
+		return
+	}
 	// insert sale_items records if sale
 	if tr.Type == "sale" {
 		for _, it := range tr.Items {
@@ -72,10 +184,19 @@ func createTransaction(w http.ResponseWriter, r *http.Request) {
 			totalLine := it.Quantity * it.PricePerUnit
 			_, err := tx.ExecContext(ctx, `INSERT INTO sale_items(id,transaction_id,inventory_lot_id,item_name,quantity,unit,price_per_unit,total) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
 				sid, id, it.InventoryLotId, it.ItemName, it.Quantity, it.Unit, it.PricePerUnit, totalLine)
-			if err!=nil { tx.Rollback(); http.Error(w, err.Error(), 500); return }
+			if err != nil {
+				tx.Rollback()
+				http.Error(w, err.Error(), 500)
+				return
+			}
 		}
 	}
-	if err := tx.Commit(); err!=nil { tx.Rollback(); http.Error(w, err.Error(), 500); return }
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
+		http.Error(w, err.Error(), 500)
+		return
+	}
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]string{"id": id})
 }
+

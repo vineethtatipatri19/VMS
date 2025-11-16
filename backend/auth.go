@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
-	"os"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"

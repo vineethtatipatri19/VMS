@@ -2,12 +2,9 @@
 package main
 
 import (
-    "log"
-    "os"
-
-    _ "github.com/golang-migrate/migrate/v4/database/postgres"
-    _ "github.com/golang-migrate/migrate/v4/source/file"
-    "github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/golang-migrate/migrate/v4"
 )
 
 func runMigrations(migrationsPath, databaseURL string) error {
