@@ -2,14 +2,16 @@
 # Build stage
 FROM golang:1.21-alpine AS build
 WORKDIR /app
-COPY go.mod .
+COPY go.mod go.sum ./
+RUN go mod download
 COPY . .
-RUN go build -o pgvms ./main.go
+RUN go build -o pgvms .
 
 # Run stage
 FROM alpine:3.18
 WORKDIR /app
 COPY --from=build /app/pgvms /app/pgvms
+COPY --from=build /app/../infra/migrations /app/infra/migrations
 ENV PORT=8080
 EXPOSE 8080
 CMD ["/app/pgvms"]

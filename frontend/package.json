@@ -1,17 +1,35 @@
-
 {
-  "name": "pgvms-mobile",
-  "version": "0.1.0",
-  "main": "App.js",
-  "scripts": {
-    "start": "expo start"
-  },
+  "name": "pgvms-frontend",
+  "version": "1.0.0",
+  "private": true,
   "dependencies": {
-    "expo": "^48.0.0",
-    "react": "18.2.0",
-    "react-native": "0.71.8",
-    "axios": "^1.4.0",
-    "@react-navigation/native": "^6.1.6",
-    "@react-navigation/native-stack": "^6.9.12"
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.20.0",
+    "axios": "^1.6.2",
+    "react-scripts": "5.0.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }

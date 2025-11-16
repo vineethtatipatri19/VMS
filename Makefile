@@ -1,63 +1,113 @@
 
-### PGVMS Makefile (updated)
+### PGVMS Makefile
 
 BACKEND_DIR=backend
 FRONTEND_DIR=frontend
-LOCAL_INFRA_DIR=infra/local
 
-### Load env from backend/.env if present (not exported here)
-export DATABASE_URL=$(shell [ -f backend/.env ] && sed -n 's/^DATABASE_URL=\(.*\)/\1/p' backend/.env)
+### Load env from .env if present
+-include .env
+export
 
-dev:
-	@echo "🚀 Starting PGVMS (local backend + local DB + frontend)…"
-	cd $(LOCAL_INFRA_DIR) && docker compose up --build -d
-	cd $(BACKEND_DIR) && air &
-	cd $(FRONTEND_DIR) && npm start
-
-run:
-	@echo "▶ Running backend locally with Go"
-	cd $(BACKEND_DIR) && go run main.go
-
-test:
-	cd $(BACKEND_DIR) && go test ./...
-
-docker-build:
-	cd $(BACKEND_DIR) && docker build -t pgvms-backend .
-
-docker-run:
-	docker run -p 8080:8080 --env-file backend/.env pgvms-backend
-
-db-up:
-	cd $(LOCAL_INFRA_DIR) && docker compose up -d db
-
-db-down:
-	cd $(LOCAL_INFRA_DIR) && docker compose down
-
-migrate-up:
-	migrate -path infra/migrations -database "$(DATABASE_URL)" up
-
-migrate-down:
-	migrate -path infra/migrations -database "$(DATABASE_URL)" down 1
-
-seed:
-	psql "$(DATABASE_URL)" -f infra/local/seed.sql
-
-clean:
-	go clean
-	rm -f backend/pgvms-api
-
-deploy:
-	gcloud builds submit --config infra/cloudbuild.yaml .
+.PHONY: help dev up down build test clean
 
 help:
 	@echo ""
-	@echo "PGVMS Automation Commands"
-	@echo "--------------------------"
-	@echo "make dev           – Start backend + DB + frontend (BEST OPTION)"
-	@echo "make run           – Run backend only"
-	@echo "make test          – Run backend tests"
-	@echo "make docker-build  – Build backend Docker image"
-	@echo "make migrate-up    – Run DB migrations"
-	@echo "make seed          – Insert sample data"
-	@echo "make deploy        – Deploy backend to Google Cloud Run"
+	@echo "PGVMS - Perishable Goods Vendor Management System"
+	@echo "================================================"
 	@echo ""
+	@echo "🚀 Quick Start:"
+	@echo "  make up          - Start all services with Docker Compose"
+	@echo "  make down        - Stop all services"
+	@echo "  make logs        - View logs from all services"
+	@echo ""
+	@echo "🔧 Development:"
+	@echo "  make dev         - Run backend locally (requires PostgreSQL)"
+	@echo "  make test        - Run backend tests"
+	@echo "  make build       - Build backend binary"
+	@echo ""
+	@echo "🐳 Docker:"
+	@echo "  make docker-build - Build Docker images"
+	@echo "  make docker-up    - Start with Docker Compose"
+	@echo "  make docker-down  - Stop Docker Compose"
+	@echo ""
+	@echo "🗄️  Database:"
+	@echo "  make db-migrate   - Run database migrations"
+	@echo "  make db-seed      - Seed sample data"
+	@echo ""
+	@echo "☁️  Deployment:"
+	@echo "  make deploy       - Deploy to Google Cloud Run"
+	@echo ""
+
+# Quick start with Docker Compose
+up: docker-up
+
+down: docker-down
+
+# Docker Compose commands
+docker-up:
+	@echo "🚀 Starting PGVMS with Docker Compose..."
+	docker-compose up --build -d
+	@echo "✅ Services started!"
+	@echo "Frontend: http://localhost:3000"
+	@echo "Backend API: http://localhost:8080"
+	@echo ""
+	@echo "Run 'make logs' to view logs"
+
+docker-down:
+	@echo "🛑 Stopping services..."
+	docker-compose down
+	@echo "✅ Services stopped"
+
+docker-build:
+	@echo "🔨 Building Docker images..."
+	docker-compose build
+
+logs:
+	docker-compose logs -f
+
+# Local development
+dev:
+	@echo "▶ Running backend locally"
+	@if [ -z "$(DATABASE_URL)" ]; then \
+		echo "❌ DATABASE_URL not set. Please create .env file from .env.example"; \
+		exit 1; \
+	fi
+	cd $(BACKEND_DIR) && go run .
+
+build:
+	@echo "🔨 Building backend..."
+	cd $(BACKEND_DIR) && go build -o pgvms .
+	@echo "✅ Built: backend/pgvms"
+
+test:
+	@echo "🧪 Running tests..."
+	cd $(BACKEND_DIR) && go test ./...
+
+# Database
+db-migrate:
+	@if [ -z "$(DATABASE_URL)" ]; then \
+		echo "❌ DATABASE_URL not set"; \
+		exit 1; \
+	fi
+	migrate -path infra/migrations -database "$(DATABASE_URL)" up
+
+db-seed:
+	@if [ -z "$(DATABASE_URL)" ]; then \
+		echo "❌ DATABASE_URL not set"; \
+		exit 1; \
+	fi
+	psql "$(DATABASE_URL)" -f infra/local/seed.sql
+
+# Cleanup
+clean:
+	@echo "🧹 Cleaning up..."
+	rm -f backend/pgvms backend/pgvms-api
+	rm -rf frontend/node_modules frontend/build
+	docker-compose down -v
+	@echo "✅ Cleanup complete"
+
+# Deployment
+deploy:
+	@echo "☁️  Deploying to Google Cloud Run..."
+	gcloud builds submit --config infra/cloudbuild.yaml .
+
