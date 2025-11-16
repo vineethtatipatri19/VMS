@@ -79,18 +79,18 @@ func isValidWastageReason(reason string) bool {
 
 // ExpiryAlert represents an expiry alert
 type ExpiryAlert struct {
-	ID               string
-	InventoryItemID  string
-	AlertDate        time.Time
-	ExpiryDate       time.Time
-	DaysUntilExpiry  int
-	Acknowledged     bool
-	AcknowledgedAt   *time.Time
-	AcknowledgedBy   string
-	CreatedAt        time.Time
-	DeletedAt        *time.Time
-	DeletedBy        string
-	DeletionReason   string
+	ID              string
+	InventoryItemID string
+	AlertDate       time.Time
+	ExpiryDate      time.Time
+	DaysUntilExpiry int
+	Acknowledged    bool
+	AcknowledgedAt  *time.Time
+	AcknowledgedBy  string
+	CreatedAt       time.Time
+	DeletedAt       *time.Time
+	DeletedBy       string
+	DeletionReason  string
 }
 
 // Acknowledge marks alert as acknowledged

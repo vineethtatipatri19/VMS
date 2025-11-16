@@ -7,13 +7,13 @@ import (
 
 // Common domain errors
 var (
-	ErrNotFound          = errors.New("resource not found")
-	ErrAlreadyExists     = errors.New("resource already exists")
-	ErrInvalidOperation  = errors.New("invalid operation")
-	ErrUnauthorized      = errors.New("unauthorized")
-	ErrForbidden         = errors.New("forbidden")
+	ErrNotFound           = errors.New("resource not found")
+	ErrAlreadyExists      = errors.New("resource already exists")
+	ErrInvalidOperation   = errors.New("invalid operation")
+	ErrUnauthorized       = errors.New("unauthorized")
+	ErrForbidden          = errors.New("forbidden")
 	ErrInvalidAttestation = errors.New("invalid attestation - must type 'I CONFIRM DELETE' exactly")
-	ErrMissingReason     = errors.New("deletion reason is required")
+	ErrMissingReason      = errors.New("deletion reason is required")
 )
 
 // ValidationError represents a validation error

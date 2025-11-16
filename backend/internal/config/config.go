@@ -30,12 +30,12 @@ type ServerConfig struct {
 
 // DatabaseConfig holds database-related configuration
 type DatabaseConfig struct {
-	URL              string
-	MaxOpenConns     int
-	MaxIdleConns     int
-	ConnMaxLifetime  int
-	MigrateOnStart   bool
-	MigrationsPath   string
+	URL             string
+	MaxOpenConns    int
+	MaxIdleConns    int
+	ConnMaxLifetime int
+	MigrateOnStart  bool
+	MigrationsPath  string
 }
 
 // JWTConfig holds JWT-related configuration
@@ -58,12 +58,12 @@ func Load() (*Config, error) {
 			Env:  getEnv("ENV", "development"),
 		},
 		Database: DatabaseConfig{
-			URL:              getEnv("DATABASE_URL", ""),
-			MaxOpenConns:     getEnvAsInt("DB_MAX_OPEN_CONNS", 25),
-			MaxIdleConns:     getEnvAsInt("DB_MAX_IDLE_CONNS", 5),
-			ConnMaxLifetime:  getEnvAsInt("DB_CONN_MAX_LIFETIME", 300),
-			MigrateOnStart:   getEnvAsBool("MIGRATE_ON_START", false),
-			MigrationsPath:   getEnv("MIGRATIONS_PATH", "file://infra/migrations"),
+			URL:             getEnv("DATABASE_URL", ""),
+			MaxOpenConns:    getEnvAsInt("DB_MAX_OPEN_CONNS", 25),
+			MaxIdleConns:    getEnvAsInt("DB_MAX_IDLE_CONNS", 5),
+			ConnMaxLifetime: getEnvAsInt("DB_CONN_MAX_LIFETIME", 300),
+			MigrateOnStart:  getEnvAsBool("MIGRATE_ON_START", false),
+			MigrationsPath:  getEnv("MIGRATIONS_PATH", "file://infra/migrations"),
 		},
 		JWT: JWTConfig{
 			Secret:     []byte(getEnv("JWT_SECRET", "default-secret-change-in-production")),
