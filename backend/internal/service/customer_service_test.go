@@ -1,279 +1,351 @@
 package service
 
 import (
-	"context"
-	"errors"
-	"testing"
+"context"
+"testing"
+"time"
 
-	"github.com/example/pgvms/internal/domain"
+"github.com/example/pgvms/internal/domain"
+"github.com/example/pgvms/internal/repository/mocks"
 )
 
-// Mock repository for testing
-type mockCustomerRepo struct {
-	customers    map[string]*domain.Customer
-	createErr    error
-	getErr       error
-	updateErr    error
-	deleteErr    error
-	listErr      error
-	balanceErr   error
-	updateBalErr error
-	searchErr    error
-}
-
-func newMockCustomerRepo() *mockCustomerRepo {
-	return &mockCustomerRepo{
-		customers: make(map[string]*domain.Customer),
-	}
-}
-
-func (m *mockCustomerRepo) Create(ctx context.Context, c *domain.Customer) error {
-	if m.createErr != nil {
-		return m.createErr
-	}
-	m.customers[c.ID] = c
-	return nil
-}
-
-func (m *mockCustomerRepo) GetByID(ctx context.Context, id string) (*domain.Customer, error) {
-	if m.getErr != nil {
-		return nil, m.getErr
-	}
-	c, ok := m.customers[id]
-	if !ok {
-		return nil, domain.ErrNotFound
-	}
-	return c, nil
-}
-
-func (m *mockCustomerRepo) List(ctx context.Context, status string) ([]*domain.Customer, error) {
-	if m.listErr != nil {
-		return nil, m.listErr
-	}
-	var result []*domain.Customer
-	for _, c := range m.customers {
-		if status == "" || c.Status == status {
-			result = append(result, c)
-		}
-	}
-	return result, nil
-}
-
-func (m *mockCustomerRepo) Update(ctx context.Context, c *domain.Customer) error {
-	if m.updateErr != nil {
-		return m.updateErr
-	}
-	if _, ok := m.customers[c.ID]; !ok {
-		return domain.ErrNotFound
-	}
-	m.customers[c.ID] = c
-	return nil
-}
-
-func (m *mockCustomerRepo) Delete(ctx context.Context, id string, req *domain.DeleteRequest) error {
-	if m.deleteErr != nil {
-		return m.deleteErr
-	}
-	if _, ok := m.customers[id]; !ok {
-		return domain.ErrNotFound
-	}
-	delete(m.customers, id)
-	return nil
-}
-
-func (m *mockCustomerRepo) GetBalance(ctx context.Context, id string) (float64, error) {
-	if m.balanceErr != nil {
-		return 0, m.balanceErr
-	}
-	c, ok := m.customers[id]
-	if !ok {
-		return 0, domain.ErrNotFound
-	}
-	return c.CurrentBalance, nil
-}
-
-func (m *mockCustomerRepo) UpdateBalance(ctx context.Context, id string, delta float64) error {
-	if m.updateBalErr != nil {
-		return m.updateBalErr
-	}
-	c, ok := m.customers[id]
-	if !ok {
-		return domain.ErrNotFound
-	}
-	c.CurrentBalance += delta
-	return nil
-}
-
-func (m *mockCustomerRepo) Search(ctx context.Context, query string) ([]*domain.Customer, error) {
-	if m.searchErr != nil {
-		return nil, m.searchErr
-	}
-	var result []*domain.Customer
-	for _, c := range m.customers {
-		result = append(result, c)
-	}
-	return result, nil
-}
-
 func TestCustomerService_CreateCustomer(t *testing.T) {
-	tests := []struct {
-		name      string
-		customer  *domain.Customer
-		repoErr   error
-		expectErr bool
-	}{
-		{
-			name: "successful creation",
-			customer: &domain.Customer{
-				ID:             "cust-1",
-				Name:           "John Doe",
-				ContactNumber:  "1234567890",
-				Status:         "active",
-				CurrentBalance: 0,
-			},
-			repoErr:   nil,
-			expectErr: false,
-		},
-		{
-			name: "repository error",
-			customer: &domain.Customer{
-				ID:   "cust-2",
-				Name: "Jane Doe",
-			},
-			repoErr:   errors.New("db error"),
-			expectErr: true,
-		},
-	}
+ctx := context.Background()
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			repo := newMockCustomerRepo()
-			repo.createErr = tt.repoErr
-			svc := NewCustomerService(repo)
+t.Run("success - valid customer", func(t *testing.T) {
+mockRepo := &mocks.MockCustomerRepository{
+ListFunc: func(ctx context.Context) ([]*domain.Customer, error) {
+return []*domain.Customer{}, nil // No existing customers
+},
+CreateFunc: func(ctx context.Context, c *domain.Customer) error {
+if c.Name == "" {
+t.Error("Expected name to be set")
+}
+return nil
+},
+}
 
-			err := svc.CreateCustomer(context.Background(), tt.customer)
-			if (err != nil) != tt.expectErr {
-				t.Errorf("CreateCustomer() error = %v, expectErr %v", err, tt.expectErr)
-			}
-		})
-	}
+service := NewCustomerService(mockRepo)
+customer := &domain.Customer{
+Name:         "Test Customer",
+CustomerType: "b2b",
+Status:       "active",
+}
+
+err := service.CreateCustomer(ctx, customer)
+if err != nil {
+t.Errorf("Expected no error, got %v", err)
+}
+})
+
+t.Run("validation error - missing name", func(t *testing.T) {
+mockRepo := &mocks.MockCustomerRepository{}
+service := NewCustomerService(mockRepo)
+
+customer := &domain.Customer{
+CustomerType: "b2b",
+}
+
+err := service.CreateCustomer(ctx, customer)
+if err == nil {
+t.Error("Expected validation error for missing name")
+}
+})
+
+t.Run("validation error - invalid customer type", func(t *testing.T) {
+mockRepo := &mocks.MockCustomerRepository{}
+service := NewCustomerService(mockRepo)
+
+customer := &domain.Customer{
+Name:         "Test",
+CustomerType: "invalid",
+}
+
+err := service.CreateCustomer(ctx, customer)
+if err == nil {
+t.Error("Expected validation error for invalid customer type")
+}
+})
 }
 
 func TestCustomerService_GetCustomer(t *testing.T) {
-	repo := newMockCustomerRepo()
-	svc := NewCustomerService(repo)
+ctx := context.Background()
 
-	// Setup test data
-	customer := &domain.Customer{
-		ID:             "cust-1",
-		Name:           "John Doe",
-		ContactNumber:  "1234567890",
-		Status:         "active",
-		CurrentBalance: 100.0,
-	}
-	repo.customers["cust-1"] = customer
+t.Run("success - customer found", func(t *testing.T) {
+expected := &domain.Customer{
+ID:   "cust123",
+Name: "Test Customer",
+}
 
-	tests := []struct {
-		name      string
-		id        string
-		expectErr bool
-	}{
-		{
-			name:      "customer found",
-			id:        "cust-1",
-			expectErr: false,
-		},
-		{
-			name:      "customer not found",
-			id:        "cust-999",
-			expectErr: true,
-		},
-	}
+mockRepo := &mocks.MockCustomerRepository{
+GetByIDFunc: func(ctx context.Context, id string) (*domain.Customer, error) {
+if id == "cust123" {
+return expected, nil
+}
+return nil, domain.ErrNotFound
+},
+}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result, err := svc.GetCustomer(context.Background(), tt.id)
-			if (err != nil) != tt.expectErr {
-				t.Errorf("GetCustomer() error = %v, expectErr %v", err, tt.expectErr)
-			}
-			if !tt.expectErr && result == nil {
-				t.Error("GetCustomer() expected customer, got nil")
-			}
-		})
-	}
+service := NewCustomerService(mockRepo)
+result, err := service.GetCustomer(ctx, "cust123")
+
+if err != nil {
+t.Errorf("Expected no error, got %v", err)
+}
+if result.ID != expected.ID {
+t.Errorf("Expected ID %s, got %s", expected.ID, result.ID)
+}
+})
+
+t.Run("error - customer not found", func(t *testing.T) {
+mockRepo := &mocks.MockCustomerRepository{
+GetByIDFunc: func(ctx context.Context, id string) (*domain.Customer, error) {
+return nil, domain.ErrNotFound
+},
+}
+
+service := NewCustomerService(mockRepo)
+_, err := service.GetCustomer(ctx, "nonexistent")
+
+if err != domain.ErrNotFound {
+t.Errorf("Expected ErrNotFound, got %v", err)
+}
+})
+}
+
+func TestCustomerService_UpdateCustomer(t *testing.T) {
+ctx := context.Background()
+
+t.Run("success - valid update", func(t *testing.T) {
+mockRepo := &mocks.MockCustomerRepository{
+GetByIDFunc: func(ctx context.Context, id string) (*domain.Customer, error) {
+return &domain.Customer{
+ID:     "cust123",
+Name:   "Old Name",
+Status: "active",
+}, nil
+},
+UpdateFunc: func(ctx context.Context, c *domain.Customer) error {
+if c.Name == "" {
+t.Error("Expected name to be set")
+}
+return nil
+},
+}
+
+service := NewCustomerService(mockRepo)
+customer := &domain.Customer{
+ID:   "cust123",
+Name: "New Name",
+}
+
+err := service.UpdateCustomer(ctx, customer)
+if err != nil {
+t.Errorf("Expected no error, got %v", err)
+}
+})
+
+t.Run("error - customer not found", func(t *testing.T) {
+mockRepo := &mocks.MockCustomerRepository{
+GetByIDFunc: func(ctx context.Context, id string) (*domain.Customer, error) {
+return nil, domain.ErrNotFound
+},
+}
+
+service := NewCustomerService(mockRepo)
+customer := &domain.Customer{
+ID:   "nonexistent",
+Name: "Test",
+}
+
+err := service.UpdateCustomer(ctx, customer)
+if err != domain.ErrNotFound {
+t.Errorf("Expected ErrNotFound, got %v", err)
+}
+})
+}
+
+func TestCustomerService_DeleteCustomer(t *testing.T) {
+ctx := context.Background()
+
+	t.Run("success - valid deletion", func(t *testing.T) {
+		mockRepo := &mocks.MockCustomerRepository{
+			GetByIDFunc: func(ctx context.Context, id string) (*domain.Customer, error) {
+				return &domain.Customer{
+					ID:             "cust123",
+					Name:           "Test",
+					CurrentBalance: 0, // Zero balance required for deletion
+				}, nil
+			},
+			DeleteFunc: func(ctx context.Context, id string, req *domain.DeleteRequest) error {
+				if req.Reason == "" {
+					t.Error("Expected reason to be set")
+				}
+				return nil
+			},
+		}
+
+		service := NewCustomerService(mockRepo)
+		req := &domain.DeleteRequest{
+			Reason:      "No longer needed",
+			Attestation: "I CONFIRM DELETE",
+		}
+
+		err := service.DeleteCustomer(ctx, "cust123", req)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
+
+	t.Run("error - invalid attestation", func(t *testing.T) {
+mockRepo := &mocks.MockCustomerRepository{}
+service := NewCustomerService(mockRepo)
+
+req := &domain.DeleteRequest{
+Reason:      "Test",
+Attestation: "invalid",
+}
+
+err := service.DeleteCustomer(ctx, "cust123", req)
+if err == nil {
+t.Error("Expected validation error for invalid attestation")
+}
+})
+}
+
+func TestCustomerService_GetBalance(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("success - get balance", func(t *testing.T) {
+		mockRepo := &mocks.MockCustomerRepository{
+			GetBalanceFunc: func(ctx context.Context, customerID string) (float64, error) {
+				return 1500.50, nil
+			},
+		}
+
+		service := NewCustomerService(mockRepo)
+		balance, err := service.GetCustomerBalance(ctx, "cust123")
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+		if balance != 1500.50 {
+			t.Errorf("Expected balance 1500.50, got %.2f", balance)
+		}
+	})
+}
+
+func TestCustomerService_UpdateBalance(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("success - sale transaction", func(t *testing.T) {
+		called := false
+		mockRepo := &mocks.MockCustomerRepository{
+			UpdateBalanceFunc: func(ctx context.Context, customerID string, delta float64) error {
+				called = true
+				if delta != 500.0 {
+					t.Errorf("Expected delta 500.0, got %.2f", delta)
+				}
+				return nil
+			},
+			UpdateLastTransactionFunc: func(ctx context.Context, customerID string, date time.Time) error {
+				return nil
+			},
+		}
+
+		service := NewCustomerService(mockRepo)
+		err := service.UpdateCustomerBalance(ctx, "cust123", 500.0, "sale")
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+		if !called {
+			t.Error("Expected UpdateBalance to be called")
+		}
+	})
+
+	t.Run("success - payment transaction", func(t *testing.T) {
+		var capturedDelta float64
+		mockRepo := &mocks.MockCustomerRepository{
+			UpdateBalanceFunc: func(ctx context.Context, customerID string, delta float64) error {
+				capturedDelta = delta
+				return nil
+			},
+			UpdateLastTransactionFunc: func(ctx context.Context, customerID string, date time.Time) error {
+				return nil
+			},
+		}
+
+		service := NewCustomerService(mockRepo)
+		err := service.UpdateCustomerBalance(ctx, "cust123", 500.0, "payment")
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+		if capturedDelta != -500.0 {
+			t.Errorf("Expected delta -500.0 for payment, got %.2f", capturedDelta)
+		}
+	})
 }
 
 func TestCustomerService_CheckCreditLimit(t *testing.T) {
-	repo := newMockCustomerRepo()
-	svc := NewCustomerService(repo)
+	ctx := context.Background()
 
-	// Customer with credit limit
-	customer := &domain.Customer{
-		ID:             "cust-1",
-		Name:           "John Doe",
-		CreditLimit:    1000.0,
-		CurrentBalance: 500.0, // owes 500
-	}
-	repo.customers["cust-1"] = customer
+	t.Run("success - within credit limit", func(t *testing.T) {
+		mockRepo := &mocks.MockCustomerRepository{
+			GetByIDFunc: func(ctx context.Context, id string) (*domain.Customer, error) {
+				return &domain.Customer{
+					ID:             "cust123",
+					Status:         "active",
+					CreditLimit:    10000,
+					CurrentBalance: 0, // Zero balance = not overdue
+				}, nil
+			},
+		}
 
-	tests := []struct {
-		name        string
-		id          string
-		amount      float64
-		canPurchase bool
-	}{
-		{
-			name:        "within credit limit",
-			id:          "cust-1",
-			amount:      400.0,
-			canPurchase: true,
-		},
-		{
-			name:        "exceeds credit limit",
-			id:          "cust-1",
-			amount:      600.0,
-			canPurchase: false,
-		},
-	}
+		service := NewCustomerService(mockRepo)
+		err := service.CheckCreditLimit(ctx, "cust123", 5000)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := svc.CheckCreditLimit(context.Background(), tt.id, tt.amount)
-			canPurchase := (err == nil)
-			if canPurchase != tt.canPurchase {
-				t.Errorf("CheckCreditLimit() canPurchase = %v, want %v", canPurchase, tt.canPurchase)
-			}
-		})
-	}
-}
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
 
-func TestCustomerService_GetOverdueCustomers(t *testing.T) {
-	repo := newMockCustomerRepo()
-	svc := NewCustomerService(repo)
+	t.Run("error - exceeds credit limit", func(t *testing.T) {
+		mockRepo := &mocks.MockCustomerRepository{
+			GetByIDFunc: func(ctx context.Context, id string) (*domain.Customer, error) {
+				return &domain.Customer{
+					ID:             "cust123",
+					Status:         "active",
+					CreditLimit:    10000,
+					CurrentBalance: 8000,
+				}, nil
+			},
+		}
 
-	// Setup test data
-	overdue := &domain.Customer{
-		ID:             "cust-1",
-		Name:           "Overdue Customer",
-		CurrentBalance: 100.0, // positive means owes money
-		Status:         "active",
-	}
-	current := &domain.Customer{
-		ID:             "cust-2",
-		Name:           "Current Customer",
-		CurrentBalance: -50.0,
-		Status:         "active",
-	}
-	repo.customers["cust-1"] = overdue
-	repo.customers["cust-2"] = current
+		service := NewCustomerService(mockRepo)
+		err := service.CheckCreditLimit(ctx, "cust123", 5000)
 
-	result, err := svc.GetOverdueCustomers(context.Background())
-	if err != nil {
-		t.Fatalf("GetOverdueCustomers() error = %v", err)
-	}
+		if err == nil {
+			t.Error("Expected credit limit error")
+		}
+	})
 
-	// Should return at least one overdue customer
-	if len(result) == 0 {
-		t.Error("GetOverdueCustomers() expected overdue customers, got none")
-	}
+	t.Run("error - inactive customer", func(t *testing.T) {
+		mockRepo := &mocks.MockCustomerRepository{
+			GetByIDFunc: func(ctx context.Context, id string) (*domain.Customer, error) {
+				return &domain.Customer{
+					ID:      "cust123",
+					Status:  "inactive",
+				}, nil
+			},
+		}
+
+		service := NewCustomerService(mockRepo)
+		err := service.CheckCreditLimit(ctx, "cust123", 5000)
+
+		if err == nil {
+			t.Error("Expected inactive customer error")
+		}
+	})
 }

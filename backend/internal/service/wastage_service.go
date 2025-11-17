@@ -33,7 +33,7 @@ return fmt.Errorf("failed to get inventory item: %w", err)
 if invItem.Quantity < wastage.Quantity {
 return &domain.BusinessError{
 Code:    "INSUFFICIENT_STOCK",
-Message: fmt.Sprintf("insufficient stock: requested %d, available %d", wastage.Quantity, invItem.Quantity),
+Message: fmt.Sprintf("insufficient stock: requested %.2f, available %.2f", wastage.Quantity, invItem.Quantity),
 }
 }
 

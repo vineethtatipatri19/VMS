@@ -89,7 +89,7 @@ return err
 if item.Quantity > 0 {
 return &domain.BusinessError{
 Code:    "STOCK_EXISTS",
-Message: fmt.Sprintf("cannot delete item with stock: %d units remaining", item.Quantity),
+Message: fmt.Sprintf("cannot delete item with stock: %.2f units remaining", item.Quantity),
 }
 }
 
@@ -116,7 +116,7 @@ Message: "inventory item is not active",
 if item.Quantity < float64(quantity) {
 return &domain.BusinessError{
 Code:    "INSUFFICIENT_STOCK",
-Message: fmt.Sprintf("insufficient stock: requested %d, available %d", quantity, item.Quantity),
+Message: fmt.Sprintf("insufficient stock: requested %d, available %.2f", quantity, item.Quantity),
 }
 }
 
@@ -159,7 +159,7 @@ Message: "inventory item is not active",
 if item.Quantity < float64(requiredQty) {
 return &domain.BusinessError{
 Code:    "INSUFFICIENT_STOCK",
-Message: fmt.Sprintf("insufficient stock: requested %d, available %d", requiredQty, item.Quantity),
+Message: fmt.Sprintf("insufficient stock: requested %d, available %.2f", requiredQty, item.Quantity),
 }
 }
 

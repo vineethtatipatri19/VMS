@@ -81,13 +81,13 @@ Message: fmt.Sprintf("purchase amount %.2f exceeds available credit", totalAmoun
 for _, item := range items {
 invItem, err := s.inventoryRepo.GetByID(ctx, item.InventoryLotID)
 if err != nil {
-return fmt.Errorf("failed to get inventory item %d: %w", item.InventoryLotID, err)
+return fmt.Errorf("failed to get inventory item %s: %w", item.InventoryLotID, err)
 }
 
 if invItem.Quantity < item.Quantity {
 return &domain.BusinessError{
 Code:    "INSUFFICIENT_STOCK",
-Message: fmt.Sprintf("insufficient stock for item %s: requested %d, available %d", 
+Message: fmt.Sprintf("insufficient stock for item %s: requested %.2f, available %.2f", 
 invItem.Name, item.Quantity, invItem.Quantity),
 }
 }
