@@ -110,7 +110,9 @@ func TestInventoryHandler_List(t *testing.T) {
 }
 
 func TestInventoryHandler_Update(t *testing.T) {
-	repo := &mockInventoryRepo{}
+	repo := &mockInventoryRepo{
+		item: &domain.InventoryItem{ID: "i1", Name: "Old Item", LotNumber: "LOT123", Unit: "kg"},
+	}
 	svc := service.NewInventoryService(repo)
 	handler := NewInventoryHandler(svc)
 
@@ -132,7 +134,9 @@ func TestInventoryHandler_Update(t *testing.T) {
 }
 
 func TestInventoryHandler_Delete(t *testing.T) {
-	repo := &mockInventoryRepo{}
+	repo := &mockInventoryRepo{
+		item: &domain.InventoryItem{ID: "i1", Name: "Test Item", LotNumber: "LOT123", Unit: "kg"},
+	}
 	svc := service.NewInventoryService(repo)
 	handler := NewInventoryHandler(svc)
 
@@ -181,7 +185,7 @@ func TestInventoryHandler_GetLowStock(t *testing.T) {
 
 func TestInventoryHandler_DeductStock(t *testing.T) {
 	repo := &mockInventoryRepo{
-		item: &domain.InventoryItem{ID: "i1", Quantity: 100},
+		item: &domain.InventoryItem{ID: "i1", Name: "Test", Quantity: 100, Status: "active"},
 	}
 	svc := service.NewInventoryService(repo)
 	handler := NewInventoryHandler(svc)

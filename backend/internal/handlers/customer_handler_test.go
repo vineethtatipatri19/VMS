@@ -140,7 +140,9 @@ func TestCustomerHandler_List(t *testing.T) {
 
 func TestCustomerHandler_Update(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
-		repo := &mockCustomerRepo{}
+		repo := &mockCustomerRepo{
+			customer: &domain.Customer{ID: "c1", Name: "Old Name", CustomerType: "b2b"},
+		}
 		svc := service.NewCustomerService(repo)
 		handler := NewCustomerHandler(svc)
 
@@ -160,7 +162,9 @@ func TestCustomerHandler_Update(t *testing.T) {
 
 func TestCustomerHandler_Delete(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
-		repo := &mockCustomerRepo{}
+		repo := &mockCustomerRepo{
+			customer: &domain.Customer{ID: "c1", Name: "Test Customer", CustomerType: "b2b"},
+		}
 		svc := service.NewCustomerService(repo)
 		handler := NewCustomerHandler(svc)
 
