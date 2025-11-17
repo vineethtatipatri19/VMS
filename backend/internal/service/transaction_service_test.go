@@ -19,7 +19,7 @@ func TestTransactionService_CreateTransaction(t *testing.T) {
 		}
 
 		service := NewTransactionService(mockTxRepo, nil, nil, nil)
-		
+
 		tx := &domain.Transaction{
 			CustomerID:  "cust123",
 			Type:        "sale",
@@ -34,7 +34,7 @@ func TestTransactionService_CreateTransaction(t *testing.T) {
 
 	t.Run("validation error - missing customer ID", func(t *testing.T) {
 		service := NewTransactionService(nil, nil, nil, nil)
-		
+
 		tx := &domain.Transaction{
 			Type:        "sale",
 			TotalAmount: 100,
@@ -153,7 +153,7 @@ func TestTransactionService_DeleteTransaction(t *testing.T) {
 	t.Run("error - missing reason", func(t *testing.T) {
 		mockTxRepo := &mocks.MockTransactionRepository{}
 		mockSaleItemRepo := &mocks.MockSaleItemRepository{}
-		
+
 		service := NewTransactionService(mockTxRepo, nil, nil, mockSaleItemRepo)
 		req := &domain.DeleteRequest{
 			Reason:      "",

@@ -9,12 +9,12 @@ import (
 
 // MockTransactionRepository is a mock implementation of repository.TransactionRepository
 type MockTransactionRepository struct {
-	CreateFunc           func(ctx context.Context, tx *domain.Transaction) error
-	GetByIDFunc          func(ctx context.Context, id string) (*domain.Transaction, error)
-	ListByCustomerFunc   func(ctx context.Context, customerID string) ([]*domain.Transaction, error)
-	ListFunc             func(ctx context.Context, txType string, startDate, endDate time.Time) ([]*domain.Transaction, error)
-	UpdateFunc           func(ctx context.Context, tx *domain.Transaction) error
-	DeleteFunc           func(ctx context.Context, id string, req *domain.DeleteRequest) error
+	CreateFunc         func(ctx context.Context, tx *domain.Transaction) error
+	GetByIDFunc        func(ctx context.Context, id string) (*domain.Transaction, error)
+	ListByCustomerFunc func(ctx context.Context, customerID string) ([]*domain.Transaction, error)
+	ListFunc           func(ctx context.Context, txType string, startDate, endDate time.Time) ([]*domain.Transaction, error)
+	UpdateFunc         func(ctx context.Context, tx *domain.Transaction) error
+	DeleteFunc         func(ctx context.Context, id string, req *domain.DeleteRequest) error
 }
 
 func (m *MockTransactionRepository) Create(ctx context.Context, tx *domain.Transaction) error {

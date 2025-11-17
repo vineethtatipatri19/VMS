@@ -182,5 +182,3 @@ func TestInventoryService_DeleteItem(t *testing.T) {
 		}
 	})
 }
-
-
