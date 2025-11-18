@@ -105,6 +105,56 @@ func (r *customerRepository) GetByID(ctx context.Context, id string) (*domain.Cu
 	return &c, nil
 }
 
+func (r *customerRepository) GetByContactNumber(ctx context.Context, contactNumber string) (*domain.Customer, error) {
+	query := `
+		SELECT id, name, email, address, contact_number, alternate_contact, whatsapp_number,
+		       photo_url, business_name, gstin, customer_type, aadhaar_verified, 
+		       kyc_document_type, kyc_document_number, credit_limit, current_balance, 
+		       payment_terms_days, interest_rate, status, notes, tags, 
+		       last_transaction_date, total_purchases, loyalty_points, created_at, updated_at
+		FROM customers 
+		WHERE contact_number = $1 AND deleted_at IS NULL`
+
+	var c domain.Customer
+	var email, address, contactNum, alternateContact, whatsappNumber, photoURL sql.NullString
+	var businessName, gstin, customerType, kycDocType, kycDocNumber, status, notes sql.NullString
+	var lastTransDate sql.NullTime
+
+	err := r.db.QueryRowContext(ctx, query, contactNumber).Scan(
+		&c.ID, &c.Name, &email, &address, &contactNum, &alternateContact,
+		&whatsappNumber, &photoURL, &businessName, &gstin, &customerType,
+		&c.AadhaarVerified, &kycDocType, &kycDocNumber, &c.CreditLimit,
+		&c.CurrentBalance, &c.PaymentTermsDays, &c.InterestRate, &status,
+		&notes, pq.Array(&c.Tags), &lastTransDate, &c.TotalPurchases,
+		&c.LoyaltyPoints, &c.CreatedAt, &c.UpdatedAt,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, domain.ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get customer by contact: %w", err)
+	}
+
+	// Map nullable values
+	c.Email = fromNullString(email)
+	c.Address = fromNullString(address)
+	c.ContactNumber = fromNullString(contactNum)
+	c.AlternateContact = fromNullString(alternateContact)
+	c.WhatsappNumber = fromNullString(whatsappNumber)
+	c.PhotoURL = fromNullString(photoURL)
+	c.BusinessName = fromNullString(businessName)
+	c.GSTIN = fromNullString(gstin)
+	c.CustomerType = fromNullString(customerType)
+	c.KYCDocumentType = fromNullString(kycDocType)
+	c.KYCDocumentNumber = fromNullString(kycDocNumber)
+	c.Status = fromNullString(status)
+	c.Notes = fromNullString(notes)
+	c.LastTransactionDate = fromNullTime(lastTransDate)
+
+	return &c, nil
+}
+
 func (r *customerRepository) List(ctx context.Context) ([]*domain.Customer, error) {
 	query := `
 		SELECT id, name, email, address, contact_number, alternate_contact, whatsapp_number,
@@ -185,7 +235,7 @@ func (r *customerRepository) Update(ctx context.Context, customer *domain.Custom
 		customer.PaymentTermsDays, customer.InterestRate, customer.Status,
 		toNullString(customer.Notes), pq.Array(customer.Tags),
 		toNullTime(customer.LastTransactionDate), customer.TotalPurchases, customer.LoyaltyPoints,
-		time.Now(),
+		time.Now(), "system",
 	)
 
 	if err != nil {

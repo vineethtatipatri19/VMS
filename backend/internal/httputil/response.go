@@ -98,6 +98,7 @@ func mapError(err error) (int, *ErrorData) {
 		}
 	default:
 		// Generic internal server error
+		// TODO: Add proper logging system to capture actual errors
 		return http.StatusInternalServerError, &ErrorData{
 			Code:    "INTERNAL_ERROR",
 			Message: "An internal error occurred",

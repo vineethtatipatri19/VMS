@@ -14,6 +14,7 @@ type Transaction struct {
 	PaymentRef      string
 	DueDate         *time.Time
 	IsOverdue       bool
+	Status          string // pending, completed, cancelled
 	TotalAmount     float64
 	DiscountAmount  float64
 	TaxAmount       float64

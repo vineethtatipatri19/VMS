@@ -21,13 +21,20 @@ func NewSaleItemRepository(db *sql.DB) repository.SaleItemRepository {
 func (r *saleItemRepository) Create(ctx context.Context, item *domain.SaleItem) error {
 	query := `INSERT INTO sale_items (
 		id, transaction_id, inventory_lot_id, item_name, batch_number, quantity, unit,
-		price_per_unit, total, cost_per_unit, profit, expiry_date
-	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`
+		price_per_unit, total, cost_per_unit, expiry_date
+	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`
+
+	var expiryDate interface{}
+	if item.ExpiryDate == "" {
+		expiryDate = nil
+	} else {
+		expiryDate = item.ExpiryDate
+	}
 
 	_, err := r.db.ExecContext(ctx, query,
 		item.ID, item.TransactionID, item.InventoryLotID, item.ItemName,
 		item.BatchNumber, item.Quantity, item.Unit, item.PricePerUnit,
-		item.Total, item.CostPerUnit, item.Profit, item.ExpiryDate,
+		item.Total, item.CostPerUnit, expiryDate,
 	)
 
 	if err != nil {
@@ -43,11 +50,12 @@ func (r *saleItemRepository) GetByID(ctx context.Context, id string) (*domain.Sa
 	WHERE id = $1 AND deleted_at IS NULL`
 
 	var item domain.SaleItem
+	var expiryDate sql.NullString
 
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&item.ID, &item.TransactionID, &item.InventoryLotID, &item.ItemName,
 		&item.BatchNumber, &item.Quantity, &item.Unit, &item.PricePerUnit,
-		&item.Total, &item.CostPerUnit, &item.Profit, &item.ExpiryDate,
+		&item.Total, &item.CostPerUnit, &item.Profit, &expiryDate,
 	)
 
 	if err == sql.ErrNoRows {
@@ -55,6 +63,10 @@ func (r *saleItemRepository) GetByID(ctx context.Context, id string) (*domain.Sa
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to get sale item: %w", err)
+	}
+
+	if expiryDate.Valid {
+		item.ExpiryDate = expiryDate.String
 	}
 
 	return &item, nil
@@ -76,13 +88,18 @@ func (r *saleItemRepository) ListByTransaction(ctx context.Context, transactionI
 	items := []*domain.SaleItem{}
 	for rows.Next() {
 		var item domain.SaleItem
+		var expiryDate sql.NullString
 
 		if err := rows.Scan(
 			&item.ID, &item.TransactionID, &item.InventoryLotID, &item.ItemName,
 			&item.BatchNumber, &item.Quantity, &item.Unit, &item.PricePerUnit,
-			&item.Total, &item.CostPerUnit, &item.Profit, &item.ExpiryDate,
+			&item.Total, &item.CostPerUnit, &item.Profit, &expiryDate,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan sale item: %w", err)
+		}
+
+		if expiryDate.Valid {
+			item.ExpiryDate = expiryDate.String
 		}
 
 		items = append(items, &item)
@@ -94,12 +111,12 @@ func (r *saleItemRepository) ListByTransaction(ctx context.Context, transactionI
 func (r *saleItemRepository) Update(ctx context.Context, item *domain.SaleItem) error {
 	query := `UPDATE sale_items SET
 		quantity = $2, price_per_unit = $3, total = $4, 
-		cost_per_unit = $5, profit = $6
+		cost_per_unit = $5
 	WHERE id = $1 AND deleted_at IS NULL`
 
 	result, err := r.db.ExecContext(ctx, query,
 		item.ID, item.Quantity, item.PricePerUnit, item.Total,
-		item.CostPerUnit, item.Profit,
+		item.CostPerUnit,
 	)
 
 	if err != nil {

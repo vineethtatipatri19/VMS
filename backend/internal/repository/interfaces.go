@@ -11,6 +11,7 @@ import (
 type CustomerRepository interface {
 	Create(ctx context.Context, customer *domain.Customer) error
 	GetByID(ctx context.Context, id string) (*domain.Customer, error)
+	GetByContactNumber(ctx context.Context, contactNumber string) (*domain.Customer, error)
 	List(ctx context.Context) ([]*domain.Customer, error)
 	Update(ctx context.Context, customer *domain.Customer) error
 	Delete(ctx context.Context, id string, req *domain.DeleteRequest) error

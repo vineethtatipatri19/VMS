@@ -1,156 +1,207 @@
 package handlers
 
 import (
-"net/http"
-"time"
+	"net/http"
+	"time"
 
-"github.com/example/pgvms/internal/domain"
-"github.com/example/pgvms/internal/httputil"
-"github.com/example/pgvms/internal/service"
-"github.com/gorilla/mux"
+	"github.com/example/pgvms/internal/domain"
+	"github.com/example/pgvms/internal/httputil"
+	"github.com/example/pgvms/internal/service"
+	"github.com/gorilla/mux"
 )
 
 type TransactionHandler struct {
-transactionService *service.TransactionService
+	transactionService *service.TransactionService
 }
 
 func NewTransactionHandler(transactionService *service.TransactionService) *TransactionHandler {
-return &TransactionHandler{
-transactionService: transactionService,
-}
+	return &TransactionHandler{
+		transactionService: transactionService,
+	}
 }
 
 func (h *TransactionHandler) Create(w http.ResponseWriter, r *http.Request) {
-var txn domain.Transaction
-if err := httputil.DecodeJSON(r, &txn); err != nil {
-httputil.SendError(w, err)
-return
-}
+	var req struct {
+		domain.Transaction
+		Items []map[string]interface{} `json:"Items,omitempty"`
+	}
 
-if err := h.transactionService.CreateTransaction(r.Context(), &txn); err != nil {
-httputil.SendError(w, err)
-return
-}
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.SendError(w, err)
+		return
+	}
 
-httputil.SendJSON(w, http.StatusCreated, txn)
+	// If this is a sale transaction with items, use CreateSale
+	if req.Type == "sale" && len(req.Items) > 0 {
+		// Parse sale items
+		var items []*domain.SaleItem
+		for _, itemData := range req.Items {
+			invID, ok := itemData["InventoryID"].(string)
+			if !ok {
+				httputil.SendError(w, &domain.ValidationError{
+					Field:   "InventoryID",
+					Message: "InventoryID must be a string",
+				})
+				return
+			}
+
+			qty, ok := itemData["Quantity"].(float64)
+			if !ok {
+				httputil.SendError(w, &domain.ValidationError{
+					Field:   "Quantity",
+					Message: "Quantity must be a number",
+				})
+				return
+			}
+
+			price, ok := itemData["UnitPrice"].(float64)
+			if !ok {
+				httputil.SendError(w, &domain.ValidationError{
+					Field:   "UnitPrice",
+					Message: "UnitPrice must be a number",
+				})
+				return
+			}
+
+			item := &domain.SaleItem{
+				InventoryLotID: invID,
+				Quantity:       qty,
+				PricePerUnit:   price,
+			}
+			items = append(items, item)
+		}
+
+		if err := h.transactionService.CreateSale(r.Context(), &req.Transaction, items); err != nil {
+			httputil.SendError(w, err)
+			return
+		}
+	} else {
+		// Regular transaction without items
+		if err := h.transactionService.CreateTransaction(r.Context(), &req.Transaction); err != nil {
+			httputil.SendError(w, err)
+			return
+		}
+	}
+
+	httputil.SendJSON(w, http.StatusCreated, req.Transaction)
 }
 
 func (h *TransactionHandler) CreateSale(w http.ResponseWriter, r *http.Request) {
-var req struct {
-Transaction domain.Transaction `json:"transaction"`
-Items       []domain.SaleItem  `json:"items"`
-}
-if err := httputil.DecodeJSON(r, &req); err != nil {
-httputil.SendError(w, err)
-return
-}
+	var req struct {
+		Transaction domain.Transaction `json:"transaction"`
+		Items       []domain.SaleItem  `json:"items"`
+	}
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.SendError(w, err)
+		return
+	}
 
-var items []*domain.SaleItem
-for i := range req.Items {
-items = append(items, &req.Items[i])
-}
+	var items []*domain.SaleItem
+	for i := range req.Items {
+		items = append(items, &req.Items[i])
+	}
 
-if err := h.transactionService.CreateSale(r.Context(), &req.Transaction, items); err != nil {
-httputil.SendError(w, err)
-return
-}
+	if err := h.transactionService.CreateSale(r.Context(), &req.Transaction, items); err != nil {
+		httputil.SendError(w, err)
+		return
+	}
 
-httputil.SendJSON(w, http.StatusCreated, req.Transaction)
+	httputil.SendJSON(w, http.StatusCreated, req.Transaction)
 }
 
 func (h *TransactionHandler) CreatePayment(w http.ResponseWriter, r *http.Request) {
-var txn domain.Transaction
-if err := httputil.DecodeJSON(r, &txn); err != nil {
-httputil.SendError(w, err)
-return
-}
+	var txn domain.Transaction
+	if err := httputil.DecodeJSON(r, &txn); err != nil {
+		httputil.SendError(w, err)
+		return
+	}
 
-if err := h.transactionService.CreatePayment(r.Context(), &txn); err != nil {
-httputil.SendError(w, err)
-return
-}
+	if err := h.transactionService.CreatePayment(r.Context(), &txn); err != nil {
+		httputil.SendError(w, err)
+		return
+	}
 
-httputil.SendJSON(w, http.StatusCreated, txn)
+	httputil.SendJSON(w, http.StatusCreated, txn)
 }
 
 func (h *TransactionHandler) GetByID(w http.ResponseWriter, r *http.Request) {
-id := mux.Vars(r)["id"]
+	id := mux.Vars(r)["id"]
 
-txn, err := h.transactionService.GetTransaction(r.Context(), id)
-if err != nil {
-httputil.SendError(w, err)
-return
-}
+	txn, err := h.transactionService.GetTransaction(r.Context(), id)
+	if err != nil {
+		httputil.SendError(w, err)
+		return
+	}
 
-httputil.SendJSON(w, http.StatusOK, txn)
+	httputil.SendJSON(w, http.StatusOK, txn)
 }
 
 func (h *TransactionHandler) List(w http.ResponseWriter, r *http.Request) {
-txType := r.URL.Query().Get("type")
-startDateStr := r.URL.Query().Get("startDate")
-endDateStr := r.URL.Query().Get("endDate")
+	txType := r.URL.Query().Get("type")
+	startDateStr := r.URL.Query().Get("startDate")
+	endDateStr := r.URL.Query().Get("endDate")
 
-var startDate, endDate time.Time
-if startDateStr != "" {
-startDate, _ = time.Parse("2006-01-02", startDateStr)
-}
-if endDateStr != "" {
-endDate, _ = time.Parse("2006-01-02", endDateStr)
-}
+	var startDate, endDate time.Time
+	if startDateStr != "" {
+		startDate, _ = time.Parse("2006-01-02", startDateStr)
+	}
+	if endDateStr != "" {
+		endDate, _ = time.Parse("2006-01-02", endDateStr)
+	}
 
-transactions, err := h.transactionService.ListTransactions(r.Context(), txType, startDate, endDate)
-if err != nil {
-httputil.SendError(w, err)
-return
-}
+	transactions, err := h.transactionService.ListTransactions(r.Context(), txType, startDate, endDate)
+	if err != nil {
+		httputil.SendError(w, err)
+		return
+	}
 
-httputil.SendJSON(w, http.StatusOK, transactions)
+	httputil.SendJSON(w, http.StatusOK, transactions)
 }
 
 func (h *TransactionHandler) ListByCustomer(w http.ResponseWriter, r *http.Request) {
-customerID := mux.Vars(r)["customerId"]
+	customerID := mux.Vars(r)["customerId"]
 
-transactions, err := h.transactionService.ListCustomerTransactions(r.Context(), customerID)
-if err != nil {
-httputil.SendError(w, err)
-return
-}
+	transactions, err := h.transactionService.ListCustomerTransactions(r.Context(), customerID)
+	if err != nil {
+		httputil.SendError(w, err)
+		return
+	}
 
-httputil.SendJSON(w, http.StatusOK, transactions)
+	httputil.SendJSON(w, http.StatusOK, transactions)
 }
 
 func (h *TransactionHandler) Update(w http.ResponseWriter, r *http.Request) {
-id := mux.Vars(r)["id"]
+	id := mux.Vars(r)["id"]
 
-var txn domain.Transaction
-if err := httputil.DecodeJSON(r, &txn); err != nil {
-httputil.SendError(w, err)
-return
-}
+	var txn domain.Transaction
+	if err := httputil.DecodeJSON(r, &txn); err != nil {
+		httputil.SendError(w, err)
+		return
+	}
 
-txn.ID = id
+	txn.ID = id
 
-if err := h.transactionService.UpdateTransaction(r.Context(), &txn); err != nil {
-httputil.SendError(w, err)
-return
-}
+	if err := h.transactionService.UpdateTransaction(r.Context(), &txn); err != nil {
+		httputil.SendError(w, err)
+		return
+	}
 
-httputil.SendJSON(w, http.StatusOK, txn)
+	httputil.SendJSON(w, http.StatusOK, txn)
 }
 
 func (h *TransactionHandler) Delete(w http.ResponseWriter, r *http.Request) {
-id := mux.Vars(r)["id"]
+	id := mux.Vars(r)["id"]
 
-var req domain.DeleteRequest
-if err := httputil.DecodeJSON(r, &req); err != nil {
-httputil.SendError(w, err)
-return
-}
+	var req domain.DeleteRequest
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.SendError(w, err)
+		return
+	}
 
-if err := h.transactionService.DeleteTransaction(r.Context(), id, &req); err != nil {
-httputil.SendError(w, err)
-return
-}
+	if err := h.transactionService.DeleteTransaction(r.Context(), id, &req); err != nil {
+		httputil.SendError(w, err)
+		return
+	}
 
-httputil.SendJSON(w, http.StatusOK, map[string]string{"message": "transaction deleted successfully"})
+	httputil.SendJSON(w, http.StatusOK, map[string]string{"message": "transaction deleted successfully"})
 }

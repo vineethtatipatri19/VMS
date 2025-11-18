@@ -7,6 +7,7 @@ import (
 
 	"github.com/example/pgvms/internal/domain"
 	"github.com/example/pgvms/internal/repository"
+	"github.com/google/uuid"
 )
 
 type PaymentService struct {
@@ -43,6 +44,9 @@ func (s *PaymentService) CreateSchedule(ctx context.Context, schedule *domain.Pa
 			Message: "customer is not active",
 		}
 	}
+
+	// Generate UUID for new payment schedule
+	schedule.ID = uuid.New().String()
 
 	now := time.Now()
 	schedule.CreatedAt = now

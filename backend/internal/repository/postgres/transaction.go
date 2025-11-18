@@ -21,13 +21,13 @@ func NewTransactionRepository(db *sql.DB) repository.TransactionRepository {
 func (r *transactionRepository) Create(ctx context.Context, tx *domain.Transaction) error {
 	query := `INSERT INTO transactions (
 		id, customer_id, date, type, payment_amount, total_amount,
-		payment_method, payment_ref, notes, created_at
-	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
+		payment_method, payment_ref, notes, status, created_at
+	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`
 
 	_, err := r.db.ExecContext(ctx, query,
 		tx.ID, tx.CustomerID, tx.Date, tx.Type, tx.PaymentAmount, tx.TotalAmount,
 		toNullString(tx.PaymentMethod), toNullString(tx.PaymentRef),
-		toNullString(tx.Notes), tx.CreatedAt,
+		toNullString(tx.Notes), toNullString(tx.Status), tx.CreatedAt,
 	)
 
 	if err != nil {
@@ -38,16 +38,16 @@ func (r *transactionRepository) Create(ctx context.Context, tx *domain.Transacti
 
 func (r *transactionRepository) GetByID(ctx context.Context, id string) (*domain.Transaction, error) {
 	query := `SELECT id, customer_id, date, type, payment_amount, total_amount,
-		payment_method, payment_ref, notes, created_at
+		payment_method, payment_ref, notes, status, created_at
 	FROM transactions 
 	WHERE id = $1 AND deleted_at IS NULL`
 
 	var tx domain.Transaction
-	var paymentMethod, paymentRef, notes sql.NullString
+	var paymentMethod, paymentRef, notes, status sql.NullString
 
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&tx.ID, &tx.CustomerID, &tx.Date, &tx.Type, &tx.PaymentAmount, &tx.TotalAmount,
-		&paymentMethod, &paymentRef, &notes, &tx.CreatedAt,
+		&paymentMethod, &paymentRef, &notes, &status, &tx.CreatedAt,
 	)
 
 	if err == sql.ErrNoRows {
@@ -60,6 +60,7 @@ func (r *transactionRepository) GetByID(ctx context.Context, id string) (*domain
 	tx.PaymentMethod = fromNullString(paymentMethod)
 	tx.PaymentRef = fromNullString(paymentRef)
 	tx.Notes = fromNullString(notes)
+	tx.Status = fromNullString(status)
 
 	return &tx, nil
 }

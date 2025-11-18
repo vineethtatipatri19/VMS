@@ -6,6 +6,7 @@ import (
 
 	"github.com/example/pgvms/internal/domain"
 	"github.com/example/pgvms/internal/repository"
+	"github.com/google/uuid"
 )
 
 type SaleItemService struct {
@@ -27,6 +28,9 @@ func (s *SaleItemService) CreateSaleItem(ctx context.Context, item *domain.SaleI
 	if err := item.Validate(); err != nil {
 		return err
 	}
+
+	// Generate UUID for new sale item
+	item.ID = uuid.New().String()
 
 	invItem, err := s.inventoryRepo.GetByID(ctx, item.InventoryLotID)
 	if err != nil {
