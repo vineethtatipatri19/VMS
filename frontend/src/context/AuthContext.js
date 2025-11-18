@@ -20,14 +20,19 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await authAPI.login({ email, password });
-      const { token: newToken } = response.data;
+      const data = response.data.data || response.data;
+      const newToken = data.token;
       setToken(newToken);
       setUser({ email });
       return { success: true };
     } catch (error) {
+      const errorMessage = error.response?.data?.error?.message || 
+                          error.response?.data?.message || 
+                          error.message ||
+                          'Login failed. Please try again.';
       return { 
         success: false, 
-        error: error.response?.data?.message || 'Login failed' 
+        error: errorMessage
       };
     } finally {
       setLoading(false);
@@ -40,9 +45,13 @@ export const AuthProvider = ({ children }) => {
       await authAPI.register({ name, email, password });
       return { success: true };
     } catch (error) {
+      const errorMessage = error.response?.data?.error?.message || 
+                          error.response?.data?.message || 
+                          error.message ||
+                          'Registration failed. Please try again.';
       return { 
         success: false, 
-        error: error.response?.data?.message || 'Registration failed' 
+        error: errorMessage
       };
     } finally {
       setLoading(false);
