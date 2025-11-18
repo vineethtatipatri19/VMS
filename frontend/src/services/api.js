@@ -1,6 +1,26 @@
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api/v1';
+// Detect if running in development or production
+const isDevelopment = process.env.NODE_ENV === 'development';
+const isCodespaces = window.location.hostname.includes('github.dev') || 
+                     window.location.hostname.includes('githubpreview.dev') ||
+                     window.location.hostname.includes('app.github.dev');
+
+// In Codespaces or production, use the same host with port 8080
+// In local development, use localhost:8080
+let API_URL;
+if (isCodespaces) {
+  // Replace port 3000 with 8080 in the current URL
+  const url = new URL(window.location.href);
+  const hostname = url.hostname;
+  // GitHub Codespaces URL pattern
+  const baseUrl = hostname.replace(/-3000\./, '-8080.');
+  API_URL = `${url.protocol}//${baseUrl}/api/v1`;
+} else {
+  API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api/v1';
+}
+
+console.log('API URL:', API_URL);
 
 // Create axios instance with default config
 const api = axios.create({
