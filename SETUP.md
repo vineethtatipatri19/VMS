@@ -89,6 +89,8 @@ This will create a user with:
 
 ### 6. Access the Application
 
+**For Local Development:**
+
 Open your browser and navigate to:
 
 **Frontend:** http://localhost:3000
@@ -99,6 +101,26 @@ Open your browser and navigate to:
 
 **API Backend:** http://localhost:8080/api/v1
 - Health check: http://localhost:8080/api/v1/health
+
+**For GitHub Codespaces:**
+
+Codespaces uses dynamic URLs. Access your application via:
+
+1. **Frontend**: Click the "Ports" tab in VS Code, find port 3000, and click the globe icon or use the auto-generated URL (format: `https://<codespace-name>-3000.app.github.dev`)
+
+2. **API Backend**: Similarly, find port 8080 in the Ports tab
+
+3. **Important**: The frontend needs to be rebuilt with the correct API URL:
+   ```bash
+   # Get your Codespaces backend URL (port 8080)
+   export CODESPACE_BACKEND_URL="https://$(echo $CODESPACE_NAME)-8080.app.github.dev"
+   
+   # Rebuild frontend with correct API URL
+   docker-compose build --build-arg REACT_APP_API_URL=$CODESPACE_BACKEND_URL/api/v1 frontend
+   docker-compose up -d frontend
+   ```
+
+> **Note**: Each time you restart your Codespace, the URLs will be different. You may need to rebuild the frontend with the new backend URL.
 
 ### 6. Explore the System
 

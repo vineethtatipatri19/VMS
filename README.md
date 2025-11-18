@@ -48,6 +48,8 @@ A complete, production-ready vendor management system for perishable goods with 
 
 Get up and running in under 5 minutes with demo data!
 
+### Local Development
+
 ```bash
 # 1. Clone the repository
 git clone https://github.com/vineethtatipatri19/VMS.git
@@ -56,16 +58,33 @@ cd VMS
 # 2. Start all services (PostgreSQL, Backend, Frontend)
 docker-compose up -d --build
 
-# 3. Wait 30-60 seconds for services to start, then load demo data
-docker exec pgvms-postgres psql -U pgvms_user -d pgvms -f /docker-entrypoint-initdb.d/demo_simple.sql
+# 3. Run migrations manually (automatic migrations have a known issue)
+for file in infra/migrations/*.sql; do 
+  docker exec -i pgvms-postgres psql -U pgvms_user -d pgvms < "$file"
+done
 
-# 4. Create demo user (email: demo@vms.com, password: demo123)
+# 4. Load demo data
+docker cp infra/local/demo_simple.sql pgvms-postgres:/tmp/
+docker exec pgvms-postgres psql -U pgvms_user -d pgvms -f /tmp/demo_simple.sql
+
+# 5. Create demo user (email: demo@vms.com, password: demo123)
 bash setup-demo-user.sh
 
-# 5. Open your browser
+# 6. Open your browser
 # Frontend: http://localhost:3000
 # Login with: demo@vms.com / demo123
 ```
+
+### GitHub Codespaces
+
+Running in Codespaces? Use our automated setup script:
+
+```bash
+# One-command setup for Codespaces
+bash setup-codespaces.sh
+```
+
+This automatically configures the correct Codespaces URLs for frontend/backend communication.
 
 **That's it!** You now have:
 - ✅ 15 customers (B2B, wholesale, retail)
