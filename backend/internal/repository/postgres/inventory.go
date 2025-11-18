@@ -69,6 +69,7 @@ func (r *inventoryRepository) GetByID(ctx context.Context, id string) (*domain.I
 	var variant, category, subCategory, supplierId, supplierName, purchaseInvoice sql.NullString
 	var storageLocation, barcode, sku, hsnCode, packagingType, imageUrl, notes sql.NullString
 	var lastRestockDate sql.NullString
+	var weightPerUnit sql.NullFloat64
 
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&item.ID, &item.Name, &variant, &item.LotNumber, &item.Quantity, &item.Unit,
@@ -76,7 +77,7 @@ func (r *inventoryRepository) GetByID(ctx context.Context, id string) (*domain.I
 		&category, &subCategory, &item.CostPrice, &item.SellingPrice, &item.MarginPercentage,
 		&supplierId, &supplierName, &purchaseInvoice, &item.MinStockLevel, &item.ReorderPoint,
 		&item.ShelfLifeDays, &storageLocation, &barcode, &sku, &hsnCode, &item.GSTRate, &item.Status,
-		&item.WeightPerUnit, &packagingType, &imageUrl, &notes, &item.TotalSold, &item.TotalWasted,
+		&weightPerUnit, &packagingType, &imageUrl, &notes, &item.TotalSold, &item.TotalWasted,
 		&lastRestockDate, &item.CreatedAt, &item.UpdatedAt,
 	)
 
@@ -101,6 +102,9 @@ func (r *inventoryRepository) GetByID(ctx context.Context, id string) (*domain.I
 	item.ImageURL = fromNullString(imageUrl)
 	item.Notes = fromNullString(notes)
 	item.LastRestockDate = fromNullString(lastRestockDate)
+	if weightPerUnit.Valid {
+		item.WeightPerUnit = weightPerUnit.Float64
+	}
 
 	return &item, nil
 }
@@ -145,6 +149,7 @@ func (r *inventoryRepository) List(ctx context.Context, status string, sortBy st
 		var variant, category, subCategory, supplierId, supplierName, purchaseInvoice sql.NullString
 		var storageLocation, barcode, sku, hsnCode, packagingType, imageUrl, notes sql.NullString
 		var lastRestockDate sql.NullString
+		var weightPerUnit sql.NullFloat64
 
 		if err := rows.Scan(
 			&item.ID, &item.Name, &variant, &item.LotNumber, &item.Quantity, &item.Unit,
@@ -152,7 +157,7 @@ func (r *inventoryRepository) List(ctx context.Context, status string, sortBy st
 			&category, &subCategory, &item.CostPrice, &item.SellingPrice, &item.MarginPercentage,
 			&supplierId, &supplierName, &purchaseInvoice, &item.MinStockLevel, &item.ReorderPoint,
 			&item.ShelfLifeDays, &storageLocation, &barcode, &sku, &hsnCode, &item.GSTRate, &item.Status,
-			&item.WeightPerUnit, &packagingType, &imageUrl, &notes, &item.TotalSold, &item.TotalWasted,
+			&weightPerUnit, &packagingType, &imageUrl, &notes, &item.TotalSold, &item.TotalWasted,
 			&lastRestockDate, &item.CreatedAt, &item.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan inventory item: %w", err)
@@ -172,6 +177,9 @@ func (r *inventoryRepository) List(ctx context.Context, status string, sortBy st
 		item.ImageURL = fromNullString(imageUrl)
 		item.Notes = fromNullString(notes)
 		item.LastRestockDate = fromNullString(lastRestockDate)
+		if weightPerUnit.Valid {
+			item.WeightPerUnit = weightPerUnit.Float64
+		}
 
 		items = append(items, &item)
 	}
@@ -287,6 +295,7 @@ func (r *inventoryRepository) GetExpiringSoon(ctx context.Context, days int) ([]
 		var variant, category, subCategory, supplierId, supplierName, purchaseInvoice sql.NullString
 		var storageLocation, barcode, sku, hsnCode, packagingType, imageUrl, notes sql.NullString
 		var lastRestockDate sql.NullString
+		var weightPerUnit sql.NullFloat64
 
 		if err := rows.Scan(
 			&item.ID, &item.Name, &variant, &item.LotNumber, &item.Quantity, &item.Unit,
@@ -294,7 +303,7 @@ func (r *inventoryRepository) GetExpiringSoon(ctx context.Context, days int) ([]
 			&category, &subCategory, &item.CostPrice, &item.SellingPrice, &item.MarginPercentage,
 			&supplierId, &supplierName, &purchaseInvoice, &item.MinStockLevel, &item.ReorderPoint,
 			&item.ShelfLifeDays, &storageLocation, &barcode, &sku, &hsnCode, &item.GSTRate, &item.Status,
-			&item.WeightPerUnit, &packagingType, &imageUrl, &notes, &item.TotalSold, &item.TotalWasted,
+			&weightPerUnit, &packagingType, &imageUrl, &notes, &item.TotalSold, &item.TotalWasted,
 			&lastRestockDate, &item.CreatedAt, &item.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan expiring item: %w", err)
@@ -314,6 +323,9 @@ func (r *inventoryRepository) GetExpiringSoon(ctx context.Context, days int) ([]
 		item.ImageURL = fromNullString(imageUrl)
 		item.Notes = fromNullString(notes)
 		item.LastRestockDate = fromNullString(lastRestockDate)
+		if weightPerUnit.Valid {
+			item.WeightPerUnit = weightPerUnit.Float64
+		}
 
 		items = append(items, &item)
 	}
@@ -346,6 +358,7 @@ func (r *inventoryRepository) GetLowStock(ctx context.Context) ([]*domain.Invent
 		var variant, category, subCategory, supplierId, supplierName, purchaseInvoice sql.NullString
 		var storageLocation, barcode, sku, hsnCode, packagingType, imageUrl, notes sql.NullString
 		var lastRestockDate sql.NullString
+		var weightPerUnit sql.NullFloat64
 
 		if err := rows.Scan(
 			&item.ID, &item.Name, &variant, &item.LotNumber, &item.Quantity, &item.Unit,
@@ -353,7 +366,7 @@ func (r *inventoryRepository) GetLowStock(ctx context.Context) ([]*domain.Invent
 			&category, &subCategory, &item.CostPrice, &item.SellingPrice, &item.MarginPercentage,
 			&supplierId, &supplierName, &purchaseInvoice, &item.MinStockLevel, &item.ReorderPoint,
 			&item.ShelfLifeDays, &storageLocation, &barcode, &sku, &hsnCode, &item.GSTRate, &item.Status,
-			&item.WeightPerUnit, &packagingType, &imageUrl, &notes, &item.TotalSold, &item.TotalWasted,
+			&weightPerUnit, &packagingType, &imageUrl, &notes, &item.TotalSold, &item.TotalWasted,
 			&lastRestockDate, &item.CreatedAt, &item.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan low stock item: %w", err)
@@ -373,6 +386,9 @@ func (r *inventoryRepository) GetLowStock(ctx context.Context) ([]*domain.Invent
 		item.ImageURL = fromNullString(imageUrl)
 		item.Notes = fromNullString(notes)
 		item.LastRestockDate = fromNullString(lastRestockDate)
+		if weightPerUnit.Valid {
+			item.WeightPerUnit = weightPerUnit.Float64
+		}
 
 		items = append(items, &item)
 	}

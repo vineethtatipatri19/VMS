@@ -60,8 +60,10 @@ ALTER TABLE inventory_items ADD COLUMN IF NOT EXISTS is_perishable BOOLEAN DEFAU
 ALTER TABLE inventory_items ADD COLUMN IF NOT EXISTS weight_per_unit NUMERIC;
 ALTER TABLE inventory_items ADD COLUMN IF NOT EXISTS packaging_type TEXT;
 ALTER TABLE inventory_items ADD COLUMN IF NOT EXISTS image_url TEXT;
+ALTER TABLE inventory_items ADD COLUMN IF NOT EXISTS notes TEXT;
 ALTER TABLE inventory_items ADD COLUMN IF NOT EXISTS total_sold NUMERIC DEFAULT 0;
 ALTER TABLE inventory_items ADD COLUMN IF NOT EXISTS total_wasted NUMERIC DEFAULT 0;
+ALTER TABLE inventory_items ADD COLUMN IF NOT EXISTS last_restock_date TIMESTAMPTZ;
 
 -- Auto-update status based on quantity
 CREATE OR REPLACE FUNCTION update_inventory_status()
