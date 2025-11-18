@@ -37,16 +37,35 @@ This command will:
 - Build the backend Go application
 - Build the frontend React application
 - Start PostgreSQL database
-- Run database migrations automatically
 - Start all services in the background
 
 **Wait 30-60 seconds** for all services to fully start.
 
-### 3. Load Demo Data
+### 3. Run Database Migrations
+
+> **Important**: Automatic migrations are currently not working due to a golang-migrate path issue. Migrations must be run manually:
 
 ```bash
-# Load demo data (customers, inventory, transactions)
-docker exec pgvms-postgres psql -U pgvms_user -d pgvms -f /docker-entrypoint-initdb.d/demo_simple.sql
+# Run all migrations (001 through 007)
+for file in infra/migrations/*.sql; do 
+  docker exec -i pgvms-postgres psql -U pgvms_user -d pgvms < "$file"
+done
+```
+
+This will create all required tables including:
+- Customers, Inventory, Transactions, Sale Items
+- Crate Ledger, Wastage Log, Expiry Alerts
+- Users, Payment Schedules, Pricing Tiers
+- Soft delete columns (migration 007)
+
+### 4. Load Demo Data
+
+```bash
+# Copy demo data file to container
+docker cp infra/local/demo_simple.sql pgvms-postgres:/tmp/
+
+# Load demo data (15 customers, 45 inventory items, transactions)
+docker exec pgvms-postgres psql -U pgvms_user -d pgvms -f /tmp/demo_simple.sql
 ```
 
 This creates:
@@ -57,7 +76,7 @@ This creates:
 - 5 wastage logs
 - 7 expiry alerts
 
-### 4. Create Demo User
+### 5. Create Demo User
 
 ```bash
 # Create a demo user account
@@ -68,7 +87,7 @@ This will create a user with:
 - **Email:** demo@vms.com
 - **Password:** demo123
 
-### 5. Access the Application
+### 6. Access the Application
 
 Open your browser and navigate to:
 
@@ -156,24 +175,82 @@ docker logs -f pgvms-backend
 
 # Verify database migrations ran
 docker exec pgvms-postgres psql -U pgvms_user -d pgvms -c "\dt"
+
+# Should see these tables:
+# customers, inventory_items, transactions, sale_items
+# crate_ledger, wastage_log, expiry_alerts
+# users, payment_schedules, pricing_tiers, price_history
 ```
+
+### Migrations Not Running Automatically
+
+**Known Issue:** The backend's automatic migration system (golang-migrate) currently has a path resolution issue.
+
+**Symptoms:**
+- Backend logs show: `Migration warning: first .: file does not exist`
+- Tables are not created automatically
+- API returns `column "deleted_at" does not exist` errors
+
+**Solution:** Run migrations manually:
+
+```bash
+# Run all 7 migrations
+for file in infra/migrations/*.sql; do 
+  docker exec -i pgvms-postgres psql -U pgvms_user -d pgvms < "$file"
+done
+
+# Verify migrations succeeded
+docker exec pgvms-postgres psql -U pgvms_user -d pgvms -c "\dt"
+```
+
+**Note:** Migration 007 (`007_add_soft_delete.sql`) is critical - it adds the `deleted_at`, `deleted_by`, and `deletion_reason` columns required by the repository layer.
+
+### API Returns Empty Data
+
+If the API returns `{"success": false, "count": 0}`:
+
+1. **Check if demo data was loaded:**
+   ```bash
+   docker exec pgvms-postgres psql -U pgvms_user -d pgvms -c "SELECT COUNT(*) FROM customers;"
+   ```
+
+2. **Verify JWT token is valid:**
+   ```bash
+   TOKEN=$(cat .demo-token)
+   curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/customers
+   ```
+
+3. **Check for soft delete column errors in logs:**
+   ```bash
+   docker logs pgvms-backend | grep "deleted_at"
+   ```
+
+If you see "column deleted_at does not exist", run migration 007 manually.
 
 ## Data Reset
 
 To start fresh with clean data:
 
 ```bash
-# Stop all services
-docker-compose down
-
-# Remove database volume
-docker volume rm vms_postgres_data
+# Stop all services and remove volumes
+docker-compose down -v
 
 # Start services again
 docker-compose up -d --build
 
-# Wait 30 seconds, then reload demo data
-docker exec pgvms-postgres psql -U pgvms_user -d pgvms -f /docker-entrypoint-initdb.d/demo_simple.sql
+# Wait 30 seconds for services to start
+sleep 30
+
+# Run migrations manually
+for file in infra/migrations/*.sql; do 
+  docker exec -i pgvms-postgres psql -U pgvms_user -d pgvms < "$file"
+done
+
+# Load demo data
+docker cp infra/local/demo_simple.sql pgvms-postgres:/tmp/
+docker exec pgvms-postgres psql -U pgvms_user -d pgvms -f /tmp/demo_simple.sql
+
+# Create demo user
 bash setup-demo-user.sh
 ```
 
