@@ -3,6 +3,7 @@ import { wastageAPI, inventoryAPI } from '../services/api';
 import { Card, Button, Badge, Input, Select, Modal, useToast } from '../components/ui';
 import { AlertTriangle, Plus, Search, Calendar, Edit2, Trash2 } from 'lucide-react';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
+import { normalizeWastage, normalizeInventory, formatCurrency, formatDateTime, getStatusVariant } from '../utils/dataHelpers';
 
 function Wastage() {
   const toast = useToast();
@@ -37,8 +38,10 @@ function Wastage() {
         wastageAPI.getAll(),
         inventoryAPI.getAll()
       ]);
-      setWastageLog(wastageRes.data || []);
-      setInventory(invRes.data || []);
+      const wastageData = wastageRes.data.data || wastageRes.data || [];
+      const invData = invRes.data.data || invRes.data || [];
+      setWastageLog(wastageData.map(normalizeWastage));
+      setInventory(invData.map(normalizeInventory));
     } catch (err) {
       console.error('Error fetching data:', err);
       toast.error('Failed to load wastage data');
@@ -238,14 +241,14 @@ function Wastage() {
               ) : (
                 filteredWastage.map((log) => (
                   <tr key={log.id}>
-                    <td>{new Date(log.loggedAt).toLocaleDateString()}</td>
+                    <td>{new Date(log.recordedAt).toLocaleDateString()}</td>
                     <td style={{ fontWeight: '500' }}>{log.itemName}</td>
                     <td>{log.quantity} {log.unit}</td>
                     <td>{getReasonBadge(log.reason)}</td>
                     <td style={{ color: 'var(--danger)', fontWeight: '500' }}>₹{(log.costValue || 0).toFixed(2)}</td>
-                    <td>{log.loggedBy || '—'}</td>
+                    <td>{log.recordedBy || '—'}</td>
                     <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {log.reasonDetails || '—'}
+                      {log.notes || '—'}
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>

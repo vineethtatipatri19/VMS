@@ -102,6 +102,16 @@ func dashboardHandler(w http.ResponseWriter, r *http.Request) {
 		stats.MonthSales = 0
 	}
 
+	// Total inventory value (quantity * cost_price for all available items)
+	err = db.QueryRowContext(ctx, `
+		SELECT COALESCE(SUM(quantity * COALESCE(cost_price, 0)), 0) 
+		FROM inventory_items 
+		WHERE status IN ('available', 'low_stock') 
+		AND quantity > 0`).Scan(&stats.TotalInventoryValue)
+	if err != nil {
+		stats.TotalInventoryValue = 0
+	}
+
 	httputil.SendJSON(w, http.StatusOK, stats)
 }
 

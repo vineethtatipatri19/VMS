@@ -4,18 +4,22 @@ import "time"
 
 // Crate represents a crate transaction (issue/return)
 type Crate struct {
-	ID              string
-	CustomerID      string
-	CustomerName    string
-	TransactionID   string
-	TransactionType string // "in" or "out"
-	Quantity        int
-	UnitPrice       float64
-	TotalPrice      float64
-	Notes           string
-	CreatedBy       string
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
+	ID             string     `json:"id"`
+	CustomerID     string     `json:"customer_id"`
+	CustomerName   string     `json:"customer_name,omitempty"`
+	TransactionID  string     `json:"transaction_id,omitempty"`
+	Date           time.Time  `json:"date"`
+	CratesIssued   int        `json:"crates_issued"`
+	CratesReturned int        `json:"crates_returned"`
+	Balance        int        `json:"balance"`
+	Notes          string     `json:"notes,omitempty"`
+	CrateType      string     `json:"crate_type,omitempty"`
+	CrateValue     float64    `json:"crate_value,omitempty"`
+	UpdatedAt      time.Time  `json:"updated_at"`
+	UpdatedBy      string     `json:"updated_by,omitempty"`
+	DeletedAt      *time.Time `json:"deleted_at,omitempty"`
+	DeletedBy      string     `json:"deleted_by,omitempty"`
+	DeletionReason string     `json:"deletion_reason,omitempty"`
 }
 
 // CrateEntry represents a crate issue/return entry (legacy alias)

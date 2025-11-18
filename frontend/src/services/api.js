@@ -6,21 +6,19 @@ const isCodespaces = window.location.hostname.includes('github.dev') ||
                      window.location.hostname.includes('githubpreview.dev') ||
                      window.location.hostname.includes('app.github.dev');
 
-// In Codespaces or production, use the same host with port 8080
-// In local development, use localhost:8080
+// Use nginx proxy for API requests in Codespaces/production
+// This way we don't need separate port forwarding for backend
 let API_URL;
 if (isCodespaces) {
-  // Replace port 3000 with 8080 in the current URL
-  const url = new URL(window.location.href);
-  const hostname = url.hostname;
-  // GitHub Codespaces URL pattern
-  const baseUrl = hostname.replace(/-3000\./, '-8080.');
-  API_URL = `${url.protocol}//${baseUrl}/api/v1`;
+  // Use relative path - nginx will proxy /api/* to backend:8080
+  API_URL = '/api/v1';
+  console.log('Using nginx proxy for API requests');
 } else {
   API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api/v1';
+  console.log('Using direct backend connection');
 }
 
-console.log('API URL:', API_URL);
+console.log('Final API URL:', API_URL);
 
 // Create axios instance with default config
 const api = axios.create({

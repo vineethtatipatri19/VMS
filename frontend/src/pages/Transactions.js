@@ -3,6 +3,7 @@ import { transactionAPI, customerAPI, inventoryAPI } from '../services/api';
 import { Card, Button, Badge, Input, Select, Modal, useToast } from '../components/ui';
 import { Receipt, Plus, Search, DollarSign, ShoppingCart, Trash2, Edit2 } from 'lucide-react';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
+import { normalizeTransaction, normalizeCustomer, normalizeInventory, formatCurrency, formatDate, formatDateTime, getStatusVariant } from '../utils/dataHelpers';
 
 function Transactions() {
   const toast = useToast();
@@ -44,16 +45,23 @@ function Transactions() {
     setLoading(true);
     try {
       const params = filter ? { type: filter } : {};
-      const [txRes, custRes, invRes] = await Promise.all([
-        transactionAPI.getAll(params),
+            const [txRes, custRes, invRes] = await Promise.all([
+        transactionAPI.getAll(),
         customerAPI.getAll(),
-        inventoryAPI.getAll({ sort: 'expiry' })
+        inventoryAPI.getAll()
       ]);
-      setTransactions(txRes.data);
-      setCustomers(custRes.data);
-      setInventory(invRes.data);
+      console.log('Transaction API Response:', txRes);
+      console.log('Customer API Response:', custRes);
+      console.log('Inventory API Response:', invRes);
+      const txData = txRes.data.data || txRes.data || [];
+      const custData = custRes.data.data || custRes.data || [];
+      const invData = invRes.data.data || invRes.data || [];
+      setTransactions(txData.map(normalizeTransaction));
+      setCustomers(custData.map(normalizeCustomer));
+      setInventory(invData.map(normalizeInventory));
     } catch (err) {
-      console.error(err);
+      console.error('Error fetching transactions data:', err);
+      console.error('Error response:', err.response);
     } finally {
       setLoading(false);
     }

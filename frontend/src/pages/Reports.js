@@ -20,7 +20,8 @@ function Reports() {
   const fetchCustomers = async () => {
     try {
       const res = await customerAPI.getAll();
-      setCustomers(res.data);
+      const custData = res.data.data || res.data || [];
+      setCustomers(custData);
     } catch (err) {
       console.error(err);
     }

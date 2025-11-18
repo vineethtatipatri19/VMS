@@ -3,6 +3,7 @@ import { customerAPI } from '../services/api';
 import { Card, Button, Badge, Input, Select, Modal, useToast } from '../components/ui';
 import { Users, Plus, Edit2, Trash2, Search, Phone, MapPin, CheckCircle, XCircle } from 'lucide-react';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
+import { normalizeCustomer, formatCurrency, formatDate, getStatusVariant } from '../utils/dataHelpers';
 
 function Customers() {
   const toast = useToast();
@@ -40,9 +41,17 @@ function Customers() {
     setLoading(true);
     try {
       const res = await customerAPI.getAll();
-      setCustomers(res.data);
+      console.log('Customer API Response:', res);
+      console.log('Response data:', res.data);
+      // Handle both {data: [...]} and {success: true, data: [...]}
+      const dataArray = res.data.data || res.data || [];
+      console.log('Data array:', dataArray);
+      const normalized = dataArray.map(normalizeCustomer);
+      console.log('Normalized customers:', normalized);
+      setCustomers(normalized);
     } catch (err) {
-      console.error(err);
+      console.error('Error fetching customers:', err);
+      console.error('Error response:', err.response);
     } finally {
       setLoading(false);
     }
@@ -68,22 +77,22 @@ function Customers() {
   const handleEdit = (customer) => {
     setEditingCustomer(customer);
     setFormData({
-      name: customer.name,
-      address: customer.address || '',
-      contactNumber: customer.contactNumber || '',
-      email: customer.email || '',
-      whatsappNumber: customer.whatsappNumber || '',
-      alternateContact: customer.alternateContact || '',
-      customerType: customer.customerType || 'retail',
-      businessName: customer.businessName || '',
-      gstin: customer.gstin || '',
-      creditLimit: customer.creditLimit || '',
-      paymentTermsDays: customer.paymentTermsDays || '',
-      status: customer.status || 'active',
-      kycDocumentType: customer.kycDocumentType || '',
-      kycDocumentNumber: customer.kycDocumentNumber || '',
-      aadhaarVerified: customer.aadhaarVerified || false,
-      notes: customer.notes || ''
+      name: customer.Name || customer.name,
+      address: customer.Address || customer.address || '',
+      contactNumber: customer.ContactNumber || customer.contactNumber || '',
+      email: customer.Email || customer.email || '',
+      whatsappNumber: customer.WhatsappNumber || customer.whatsappNumber || '',
+      alternateContact: customer.AlternateContact || customer.alternateContact || '',
+      customerType: customer.CustomerType || customer.customerType || 'retail',
+      businessName: customer.BusinessName || customer.businessName || '',
+      gstin: customer.GSTIN || customer.gstin || '',
+      creditLimit: customer.CreditLimit || customer.creditLimit || '',
+      paymentTermsDays: customer.PaymentTermsDays || customer.paymentTermsDays || '',
+      status: customer.Status || customer.status || 'active',
+      kycDocumentType: customer.KYCDocumentType || customer.kycDocumentType || '',
+      kycDocumentNumber: customer.KYCDocumentNumber || customer.kycDocumentNumber || '',
+      aadhaarVerified: customer.AadhaarVerified || customer.aadhaarVerified || false,
+      notes: customer.Notes || customer.notes || ''
     });
     setShowModal(true);
   };
@@ -185,9 +194,7 @@ function Customers() {
                 </tr>
               ) : (
                 filteredCustomers.map((customer) => {
-                  const creditUsed = customer.currentBalance || 0;
-                  const creditLimit = customer.creditLimit || 0;
-                  const creditPercent = creditLimit > 0 ? (creditUsed / creditLimit) * 100 : 0;
+                  const creditPercent = customer.creditLimit > 0 ? (customer.currentBalance / customer.creditLimit) * 100 : 0;
                   
                   return (
                     <tr key={customer.id}>
@@ -202,7 +209,7 @@ function Customers() {
                           variant={customer.customerType === 'b2b' ? 'primary' : customer.customerType === 'wholesale' ? 'info' : 'neutral'} 
                           size="sm"
                         >
-                          {customer.customerType ? customer.customerType.toUpperCase() : 'RETAIL'}
+                          {(customer.customerType || 'retail').toUpperCase()}
                         </Badge>
                       </td>
                       <td>
@@ -214,13 +221,13 @@ function Customers() {
                         ) : '-'}
                       </td>
                       <td style={{ fontSize: '14px' }}>
-                        {creditLimit > 0 ? `₹${creditLimit.toFixed(2)}` : '-'}
+                        {formatCurrency(customer.creditLimit)}
                       </td>
                       <td>
-                        {creditLimit > 0 ? (
+                        {customer.creditLimit > 0 ? (
                           <div>
-                            <div style={{ fontWeight: '600', color: creditUsed > 0 ? 'var(--color-danger)' : 'var(--color-success)' }}>
-                              ₹{creditUsed.toFixed(2)}
+                            <div style={{ fontWeight: '600', color: customer.currentBalance > 0 ? 'var(--color-danger)' : 'var(--color-success)' }}>
+                              {formatCurrency(customer.currentBalance)}
                             </div>
                             <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
                               {creditPercent.toFixed(1)}% used
@@ -230,7 +237,7 @@ function Customers() {
                       </td>
                       <td>
                         <Badge 
-                          variant={customer.status === 'active' ? 'success' : customer.status === 'blocked' ? 'danger' : 'warning'} 
+                          variant={getStatusVariant(customer.status)} 
                           size="sm"
                           dot
                         >

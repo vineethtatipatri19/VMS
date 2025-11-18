@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { dashboardAPI } from '../services/api';
+import { dashboardAPI, transactionAPI } from '../services/api';
 import { 
   Users, 
   Package, 
@@ -29,6 +29,7 @@ import {
 import { Card, Button, Badge } from '../components/ui';
 import { format } from 'date-fns';
 import './Dashboard.css';
+import { formatCurrency, formatDateTime } from '../utils/dataHelpers';
 
 // Register ChartJS components
 ChartJS.register(
@@ -47,6 +48,7 @@ ChartJS.register(
 function Dashboard() {
   const [stats, setStats] = useState(null);
   const [activity, setActivity] = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -57,12 +59,17 @@ function Dashboard() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [statsRes, activityRes] = await Promise.all([
+      const [statsRes, activityRes, transactionsRes] = await Promise.all([
         dashboardAPI.getStats(),
-        dashboardAPI.getActivity()
+        dashboardAPI.getActivity(),
+        transactionAPI.getAll()
       ]);
-      setStats(statsRes.data);
-      setActivity(activityRes.data || []);
+      // Backend returns {success: true, data: {...}}
+      // Axios wraps it in .data, so we need statsRes.data.data
+      setStats(statsRes.data.data || statsRes.data);
+      setActivity(activityRes.data.data || activityRes.data || []);
+      const txData = transactionsRes.data.data || transactionsRes.data || [];
+      setTransactions(txData);
     } catch (err) {
       setError('Failed to load dashboard data');
       console.error(err);
@@ -71,13 +78,79 @@ function Dashboard() {
     }
   };
 
+  // Process transactions for sales trend chart (last 7 days)
+  const getSalesTrendData = () => {
+    const last7Days = [];
+    const today = new Date();
+    
+    // Generate last 7 days
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      last7Days.push({
+        date: date.toISOString().split('T')[0],
+        label: date.toLocaleDateString('en-US', { weekday: 'short' }),
+        amount: 0
+      });
+    }
+    
+    // Aggregate sales by date
+    transactions.forEach(tx => {
+      if (tx.Type === 'sale' && tx.Date) {
+        const txDate = new Date(tx.Date).toISOString().split('T')[0];
+        const dayData = last7Days.find(d => d.date === txDate);
+        if (dayData) {
+          dayData.amount += tx.TotalAmount || 0;
+        }
+      }
+    });
+    
+    return {
+      labels: last7Days.map(d => d.label),
+      data: last7Days.map(d => d.amount)
+    };
+  };
+
+  // Process transactions for top products chart
+  const getTopProductsData = () => {
+    const productSales = {};
+    
+    // Aggregate sales by product from transaction details
+    transactions.forEach(tx => {
+      if (tx.Type === 'sale' && tx.Details && tx.Details.items) {
+        tx.Details.items.forEach(item => {
+          const productName = item.item_name || item.ItemName || 'Unknown';
+          const quantity = item.quantity || item.Quantity || 0;
+          
+          if (!productSales[productName]) {
+            productSales[productName] = 0;
+          }
+          productSales[productName] += quantity;
+        });
+      }
+    });
+    
+    // Sort and get top 5
+    const sortedProducts = Object.entries(productSales)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+    
+    return {
+      labels: sortedProducts.map(p => p[0]),
+      data: sortedProducts.map(p => p[1])
+    };
+  };
+
+  const salesTrend = getSalesTrendData();
+  const topProducts = getTopProductsData();
+
   // Chart configurations
   const lineChartData = {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    labels: salesTrend.labels,
     datasets: [
       {
-        label: 'Sales',
-        data: [1200, 1900, 3000, 2500, 2800, 3200, 3500],
+        label: 'Sales (₹)',
+        data: salesTrend.data,
         fill: true,
         backgroundColor: 'rgba(37, 99, 235, 0.1)',
         borderColor: 'rgb(37, 99, 235)',
@@ -87,11 +160,11 @@ function Dashboard() {
   };
 
   const barChartData = {
-    labels: ['Tomatoes', 'Onions', 'Potatoes', 'Carrots', 'Cabbage'],
+    labels: topProducts.labels.length > 0 ? topProducts.labels : ['No data yet'],
     datasets: [
       {
         label: 'Quantity Sold',
-        data: [65, 59, 80, 81, 56],
+        data: topProducts.data.length > 0 ? topProducts.data : [0],
         backgroundColor: 'rgba(16, 185, 129, 0.8)',
       },
     ],

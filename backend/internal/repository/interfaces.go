@@ -56,6 +56,7 @@ type SaleItemRepository interface {
 type CrateRepository interface {
 	Create(ctx context.Context, crate *domain.CrateEntry) error
 	GetByID(ctx context.Context, id string) (*domain.CrateEntry, error)
+	List(ctx context.Context) ([]*domain.CrateEntry, error)
 	ListByCustomer(ctx context.Context, customerID string) ([]*domain.CrateEntry, error)
 	Update(ctx context.Context, crate *domain.CrateEntry) error
 	Delete(ctx context.Context, id string, req *domain.DeleteRequest) error

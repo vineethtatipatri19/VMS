@@ -22,7 +22,7 @@ func (r *wastageRepository) Create(ctx context.Context, wastage *domain.WastageL
 	query := `
 		INSERT INTO wastage_log (
 			id, inventory_item_id, item_name, quantity, unit, reason,
-			cost_value, notes, logged_by, logged_at
+			reason_details, cost_value, logged_by, logged_at
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 
 	_, err := r.db.ExecContext(ctx, query,
@@ -40,7 +40,7 @@ func (r *wastageRepository) Create(ctx context.Context, wastage *domain.WastageL
 
 func (r *wastageRepository) GetByID(ctx context.Context, id string) (*domain.WastageLog, error) {
 	query := `SELECT id, inventory_item_id, item_name, quantity, unit, reason,
-		cost_value, notes, logged_by, logged_at
+		reason_details, cost_value, logged_by, logged_at
 	FROM wastage_log 
 	WHERE id = $1`
 
@@ -49,8 +49,8 @@ func (r *wastageRepository) GetByID(ctx context.Context, id string) (*domain.Was
 
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&wastage.ID, &wastage.InventoryID, &wastage.ItemName,
-		&wastage.Quantity, &wastage.Unit, &wastage.Reason, &wastage.CostValue,
-		&notes, &loggedBy, &wastage.RecordedAt,
+		&wastage.Quantity, &wastage.Unit, &wastage.Reason,
+		&notes, &wastage.CostValue, &loggedBy, &wastage.RecordedAt,
 	)
 
 	if err == sql.ErrNoRows {
@@ -68,7 +68,7 @@ func (r *wastageRepository) GetByID(ctx context.Context, id string) (*domain.Was
 
 func (r *wastageRepository) List(ctx context.Context, startDate, endDate time.Time) ([]*domain.WastageLog, error) {
 	query := `SELECT id, inventory_item_id, item_name, quantity, unit, reason,
-		cost_value, notes, logged_by, logged_at
+		reason_details, cost_value, logged_by, logged_at
 	FROM wastage_log 
 	WHERE 1=1`
 
@@ -102,8 +102,8 @@ func (r *wastageRepository) List(ctx context.Context, startDate, endDate time.Ti
 
 		if err := rows.Scan(
 			&wastage.ID, &wastage.InventoryID, &wastage.ItemName,
-			&wastage.Quantity, &wastage.Unit, &wastage.Reason, &wastage.CostValue,
-			&notes, &loggedBy, &wastage.RecordedAt,
+			&wastage.Quantity, &wastage.Unit, &wastage.Reason,
+			&notes, &wastage.CostValue, &loggedBy, &wastage.RecordedAt,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan wastage: %w", err)
 		}
@@ -119,7 +119,7 @@ func (r *wastageRepository) List(ctx context.Context, startDate, endDate time.Ti
 
 func (r *wastageRepository) Update(ctx context.Context, wastage *domain.WastageLog) error {
 	query := `UPDATE wastage_log SET
-		quantity = $2, reason = $3, cost_value = $4, notes = $5
+		quantity = $2, reason = $3, cost_value = $4, reason_details = $5
 	WHERE id = $1`
 
 	result, err := r.db.ExecContext(ctx, query,

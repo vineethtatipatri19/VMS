@@ -32,7 +32,7 @@ LOGIN_RESPONSE=$(curl -s -X POST "$BASE_URL/api/v1/login" \
   -H "Content-Type: application/json" \
   -d "{\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"}")
 
-TOKEN=$(echo "$LOGIN_RESPONSE" | jq -r '.token')
+TOKEN=$(echo "$LOGIN_RESPONSE" | jq -r '.data.token // .token')
 
 if [ "$TOKEN" == "null" ] || [ -z "$TOKEN" ]; then
   echo "✗ Failed to get token"

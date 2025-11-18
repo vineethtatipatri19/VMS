@@ -3,6 +3,7 @@ import { crateAPI, customerAPI } from '../services/api';
 import { Card, Button, Badge, Input, Select, Modal, useToast } from '../components/ui';
 import { Box, Plus, Search, ArrowUp, ArrowDown, AlertCircle, Edit2, Trash2 } from 'lucide-react';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
+import { normalizeCustomer, normalizeCrate, formatCurrency, formatDate, formatDateTime } from '../utils/dataHelpers';
 
 function Crates() {
   const toast = useToast();
@@ -32,10 +33,13 @@ function Crates() {
         crateAPI.getAll(),
         customerAPI.getAll()
       ]);
-      setCrates(cratesRes.data);
-      setCustomers(custRes.data);
+      const cratesData = cratesRes.data.data || cratesRes.data || [];
+      const custData = custRes.data.data || custRes.data || [];
+      setCrates(cratesData.map(normalizeCrate));
+      setCustomers(custData.map(normalizeCustomer));
     } catch (err) {
       console.error(err);
+      toast.error('Failed to load crate data');
     } finally {
       setLoading(false);
     }

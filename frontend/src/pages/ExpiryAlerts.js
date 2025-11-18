@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { expiryAlertsAPI } from '../services/api';
+import { expiryAlertsAPI, inventoryAPI } from '../services/api';
 import { Card, Button, Badge, Input, useToast } from '../components/ui';
 import { AlertCircle, Bell, CheckCircle, Search, Calendar, Trash2 } from 'lucide-react';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
+import { normalizeExpiryAlert, normalizeInventory, formatDate } from '../utils/dataHelpers';
 
 function ExpiryAlerts() {
   const toast = useToast();
@@ -20,8 +21,31 @@ function ExpiryAlerts() {
   const fetchAlerts = async () => {
     setLoading(true);
     try {
-      const response = await expiryAlertsAPI.getAll();
-      setAlerts(response.data || []);
+      const [alertsRes, inventoryRes] = await Promise.all([
+        expiryAlertsAPI.getAll(),
+        inventoryAPI.getAll()
+      ]);
+      const alertsData = alertsRes.data.data || alertsRes.data || [];
+      const inventoryData = inventoryRes.data.data || inventoryRes.data || [];
+      
+      // Map inventory items by ID for quick lookup
+      const inventoryMap = {};
+      inventoryData.forEach(item => {
+        const normalizedItem = normalizeInventory(item);
+        inventoryMap[normalizedItem.id] = normalizedItem;
+      });
+      
+      // Add item names to alerts
+      const alertsWithItems = alertsData.map(alert => {
+        const normalized = normalizeExpiryAlert(alert);
+        const inventoryItem = inventoryMap[normalized.inventoryItemId];
+        return {
+          ...normalized,
+          itemName: inventoryItem ? inventoryItem.name : 'Unknown Item'
+        };
+      });
+      
+      setAlerts(alertsWithItems);
     } catch (err) {
       console.error('Error fetching alerts:', err);
       toast.error('Failed to load expiry alerts');

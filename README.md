@@ -46,203 +46,169 @@ A complete, production-ready vendor management system for perishable goods with 
 
 ## Quick Start
 
-### Local Development with Docker Compose (Recommended)
+Get up and running in under 5 minutes with demo data!
 
-1. **Clone the repository**
 ```bash
-git clone <repository-url>
+# 1. Clone the repository
+git clone https://github.com/vineethtatipatri19/VMS.git
 cd VMS
+
+# 2. Start all services (PostgreSQL, Backend, Frontend)
+docker-compose up -d --build
+
+# 3. Wait 30-60 seconds for services to start, then load demo data
+docker exec pgvms-postgres psql -U pgvms_user -d pgvms -f /docker-entrypoint-initdb.d/demo_simple.sql
+
+# 4. Create demo user (email: demo@vms.com, password: demo123)
+bash setup-demo-user.sh
+
+# 5. Open your browser
+# Frontend: http://localhost:3000
+# Login with: demo@vms.com / demo123
 ```
 
-2. **Set up environment variables**
-```bash
-cp .env.example .env
-# Edit .env and set your JWT_SECRET and optionally GEMINI_API_KEY
-```
+**That's it!** You now have:
+- ✅ 15 customers (B2B, wholesale, retail)
+- ✅ 45 inventory items with expiry tracking
+- ✅ 12 transactions with sale items
+- ✅ Crate balances, wastage logs, expiry alerts
+- ✅ Working dashboard with real charts
 
-3. **Start all services**
-```bash
-docker-compose up --build
-```
+**📖 Full Setup Guide:** See [SETUP.md](SETUP.md) for detailed instructions, troubleshooting, and manual setup
 
-This will start:
-- PostgreSQL database on port 5432
-- Backend API on http://localhost:8080
-- Frontend web app on http://localhost:3000
+**📖 Full Setup Guide:** See [SETUP.md](SETUP.md) for detailed instructions, troubleshooting, and manual setup
 
-4. **Access the application**
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8080/api/v1
-- Health check: http://localhost:8080/api/v1/health
+## What's Inside
 
-5. **Create your first user**
-- Navigate to http://localhost:3000
-- Click "Register here"
-- Create an account
-- Login and start using the system
+This system includes 8 complete modules with real-time data:
 
-### Manual Setup (Without Docker)
+### 1. Dashboard
+- Real-time KPIs (customers, expiring items, sales, balances)
+- **Sales Trend Chart** - Last 7 days of actual sales data
+- **Top Products Chart** - Best sellers by quantity from real transactions
+- Quick action buttons and recent activity feed
 
-#### Backend
+### 2. Inventory Management (45 items)
+- FEFO (First Expired First Out) sorting
+- Visual status badges (Fresh, Expiring Soon, Expired)
+- Complete CRUD with 35+ fields per item
+- Track lot numbers, suppliers, pricing, margins, storage locations
 
-1. **Prerequisites**
-   - Go 1.21 or higher
-   - PostgreSQL 15 or higher
+### 3. Customer Management (15 customers)
+- B2B, wholesale, and retail customers
+- KYC verification, GSTIN tracking
+- Credit limits and current balances
+- 26+ fields per customer with full CRUD
 
-2. **Setup database**
-```bash
-createdb pgvms
-```
+### 4. Transaction Ledger (12 transactions)
+- Digital patti book with multi-item sales
+- **Real sale items** - Each transaction includes actual products sold
+- Payment tracking, discounts, taxes
+- Invoice generation and delivery status
+- 21+ fields per transaction
 
-3. **Set environment variables**
-```bash
-export DATABASE_URL="postgres://user:password@localhost:5432/pgvms?sslmode=disable"
-export JWT_SECRET="your-secret-key"
-export GEMINI_API_KEY="your-gemini-api-key"  # Optional
-export MIGRATE_ON_START="true"
-export PORT="8080"
-```
+### 5. Crate Management
+- Track returnable crates per customer
+- Issue/return with balance tracking
+- Complete transaction history
 
-4. **Run backend**
-```bash
-cd backend
-go mod download
-go run .
-```
+### 6. Wastage Tracking (5 logs)
+- Log damaged, expired, contaminated items
+- Cost impact tracking
+- Photo documentation support
+- Categorized by reason
 
-#### Frontend
+### 7. Expiry Alerts (7 alerts)
+- Automatic alerts for expiring items
+- Urgency levels (Critical, Urgent, Moderate)
+- Days until expiry calculation
+- Acknowledge and dismiss functionality
 
-1. **Prerequisites**
-   - Node.js 18 or higher
-   - npm or yarn
+### 8. AI Forecasting & Reports
+- Demand prediction using Google Gemini AI
+- Sales, inventory, and customer reports
+- Date range filtering
+- Print-friendly layouts
 
-2. **Install dependencies**
-```bash
-cd frontend
-npm install
-```
+## Architecture
 
-3. **Set environment variables**
-```bash
-export REACT_APP_API_URL="http://localhost:8080/api/v1"
-```
+### Backend (Go)
+- Clean architecture with repository pattern
+- PostgreSQL with automatic migrations
+- JWT authentication
+- RESTful API with proper error handling
+- **Soft deletes with audit trail** - Nothing truly deleted
+- **Sale items integration** - Transactions include actual products
 
-4. **Run frontend**
-```bash
-npm start
-```
+### Frontend (React)
+- Modern React 18 with hooks
+- Custom UI component library
+- Chart.js for data visualization
+- **Real-time charts** - Dashboard shows actual sales trends and top products
+- Responsive design with mobile support
+- Context API for state management
 
-Frontend will be available at http://localhost:3000
+### DevOps
+- Docker Compose for local development
+- Ready for Cloud Run deployment
+- Automated database migrations
+- Health checks and monitoring
 
 ## Environment Variables
 
-### Backend
-- `DATABASE_URL` - PostgreSQL connection string (required)
-- `PORT` - Server port (default: 8080)
-- `JWT_SECRET` - Secret key for JWT tokens (required for production)
-- `GEMINI_API_KEY` - Google Gemini API key for AI forecasting (optional)
-- `MIGRATE_ON_START` - Run migrations on startup (default: false)
+See [SETUP.md](SETUP.md) for complete environment configuration details.
 
-### Frontend
+**Backend:**
+- `DATABASE_URL` - PostgreSQL connection string
+- `JWT_SECRET` - Secret for JWT token signing
+- `GEMINI_API_KEY` - Optional, for AI forecasting
+- `MIGRATE_ON_START` - Auto-run migrations (default: true)
+
+**Frontend:**
 - `REACT_APP_API_URL` - Backend API URL (default: http://localhost:8080/api/v1)
 
 ## API Documentation
 
-### Authentication
-- `POST /api/v1/register` - Register new user
-- `POST /api/v1/login` - Login and get JWT token
+Complete API reference: [docs/API.md](docs/API.md)
 
-### Dashboard
-- `GET /api/v1/dashboard` - Get dashboard KPIs
-- `GET /api/v1/dashboard/activity` - Get recent activity
+**Quick Reference:**
+- **Authentication:** `POST /api/v1/register`, `POST /api/v1/login`
+- **Dashboard:** `GET /api/v1/dashboard`, `GET /api/v1/dashboard/activity`
+- **Inventory:** `GET /POST /PUT /DELETE /api/v1/inventory`
+- **Customers:** `GET /POST /PUT /DELETE /api/v1/customers`
+- **Transactions:** `GET /POST /PUT /DELETE /api/v1/transactions`
+- **Crates:** `GET /POST /PUT /DELETE /api/v1/crates`
+- **Wastage:** `GET /POST /PUT /DELETE /api/v1/wastage`
+- **Expiry Alerts:** `GET /PUT /DELETE /api/v1/expiry-alerts`
+- **Forecasting:** `POST /api/v1/forecast`
+- **Reports:** `POST /api/v1/reports/generate`
 
-### Inventory
-- `GET /api/v1/inventory` - List inventory (supports ?status=expiring_soon|expired|fresh&sort=expiry)
-- `POST /api/v1/inventory` - Create inventory item
-- `GET /api/v1/inventory/{id}` - Get inventory item
-- `PUT /api/v1/inventory/{id}` - Update inventory item
-- `DELETE /api/v1/inventory/{id}` - Soft delete inventory item (requires reason & attestation)
+All endpoints (except auth) require JWT: `Authorization: Bearer <token>`
 
-### Customers
-- `GET /api/v1/customers` - List customers
-- `POST /api/v1/customers` - Create customer
-- `GET /api/v1/customers/{id}` - Get customer
-- `PUT /api/v1/customers/{id}` - Update customer
-- `DELETE /api/v1/customers/{id}` - Soft delete customer (requires reason & attestation)
+## Documentation
 
-### Transactions
-- `GET /api/v1/transactions` - List transactions (supports ?customerId=&type=sale|payment)
-- `POST /api/v1/transactions` - Create transaction (sale or payment)
-- `GET /api/v1/transactions/{id}` - Get transaction
-- `PUT /api/v1/transactions/{id}` - Update transaction
-- `DELETE /api/v1/transactions/{id}` - Soft delete transaction (requires reason & attestation)
-
-### Crates
-- `GET /api/v1/crates` - List crate ledger entries (supports ?customerId=)
-- `POST /api/v1/crates` - Create crate entry
-- `PUT /api/v1/crates/{id}` - Update crate entry
-- `DELETE /api/v1/crates/{id}` - Soft delete crate entry (requires reason & attestation)
-- `GET /api/v1/crates/balance/{customerId}` - Get crate balance for customer
-
-### Wastage
-- `GET /api/v1/wastage` - List wastage log entries (supports ?reason=expired|damaged|contaminated|other)
-- `POST /api/v1/wastage` - Create wastage entry
-- `PUT /api/v1/wastage/{id}` - Update wastage entry
-- `DELETE /api/v1/wastage/{id}` - Soft delete wastage entry (requires reason & attestation)
-
-### Expiry Alerts
-- `GET /api/v1/expiry-alerts` - List expiry alerts (supports ?acknowledged=true|false)
-- `PUT /api/v1/expiry-alerts/{id}/acknowledge` - Acknowledge an alert
-- `DELETE /api/v1/expiry-alerts/{id}` - Soft delete expiry alert (requires reason & attestation)
-
-### Forecasting (AI)
-- `POST /api/v1/forecast` - Generate demand forecast using Google Gemini AI
-
-### Reports
-- `POST /api/v1/reports/generate` - Generate report (types: sales, inventory, customer)
-
-## Database Migrations
-
-Migrations are automatically run on startup when `MIGRATE_ON_START=true`.
-
-Manual migration:
-```bash
-make migrate-up   # Apply migrations
-make migrate-down # Rollback one migration
-```
-
-## Deployment
-
-### Google Cloud Run
-
-1. **Build and push to Container Registry**
-```bash
-gcloud builds submit --config=infra/cloudbuild.yaml
-```
-
-2. **Set up Cloud SQL PostgreSQL instance**
-```bash
-gcloud sql instances create pgvms-db --database-version=POSTGRES_15 --tier=db-f1-micro --region=us-central1
-```
-
-3. **Deploy**
-```bash
-gcloud run deploy pgvms-backend \
-  --image gcr.io/[PROJECT_ID]/pgvms-backend \
-  --platform managed \
-  --region us-central1 \
-  --set-env-vars DATABASE_URL=[CONNECTION_STRING],JWT_SECRET=[SECRET],GEMINI_API_KEY=[KEY]
-```
+- **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - Essential commands and troubleshooting
+- **[SETUP.md](SETUP.md)** - Complete setup guide with troubleshooting
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - System architecture and design decisions
+- **[docs/API.md](docs/API.md)** - Complete API reference
+- **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** - Production deployment guide
+- **[docs/ENHANCED_ENTITIES.md](docs/ENHANCED_ENTITIES.md)** - Entity field reference
+- **[backend/TESTING.md](backend/TESTING.md)** - Testing guide
 
 ## Development
 
 ### Running Tests
 ```bash
+# Backend tests
 cd backend
-go test ./...
+go test ./... -v
+
+# Integration tests
+cd backend/tests/integration
+go test -v
 ```
 
-### Building
+### Building for Production
 ```bash
 # Backend
 cd backend
@@ -254,184 +220,145 @@ npm run build
 ```
 
 ### Code Style
-- Backend follows standard Go formatting (use `go fmt`)
-- Frontend uses React best practices
+- Backend: Follow Go standard formatting (`go fmt`)
+- Frontend: ESLint + Prettier recommended
+- Commit messages: Conventional commits preferred
+
+## Deployment
+
+For production deployment to Google Cloud Run, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+
+**Quick deploy:**
+```bash
+# Build and push
+gcloud builds submit --config=infra/cloudbuild.yaml
+
+# Deploy backend
+gcloud run deploy pgvms-backend \
+  --image gcr.io/PROJECT_ID/pgvms-backend \
+  --set-env-vars DATABASE_URL=...,JWT_SECRET=...
+
+# Deploy frontend to Cloud Storage + CDN
+gsutil -m rsync -r frontend/build gs://your-bucket
+```
 
 ## Project Structure
 
 ```
-.
-├── backend/                      # Go backend
-│   ├── main.go                  # Main entry point with routing
-│   ├── auth.go                  # Authentication handlers
-│   ├── customers.go             # Customer CRUD handlers
-│   ├── inventory.go             # Inventory CRUD handlers
-│   ├── transaction_service.go   # Transaction list/create handlers
-│   ├── transaction_update.go    # Transaction update handler
-│   ├── crates.go                # Crate management handlers
-│   ├── enhanced_entities.go     # Wastage and expiry alerts handlers
-│   ├── delete_handlers.go       # Centralized soft delete handlers with attestation
-│   ├── update_handlers.go       # Update handlers for customers, crates, wastage
-│   ├── dashboard.go             # Dashboard KPI handlers
-│   ├── forecasting.go           # AI forecasting with Gemini
-│   ├── reports.go               # Report generation
-│   ├── helpers.go               # Utility functions
-│   ├── migrate.go               # Database migration logic
-│   ├── startup.go               # Application initialization
-│   └── Dockerfile               # Backend container
-├── frontend/                     # React frontend
+VMS/
+├── backend/                      # Go backend application
+│   ├── main.go                  # Entry point with routing
+│   ├── internal/                # Internal packages (clean architecture)
+│   │   ├── domain/              # Business entities
+│   │   ├── repository/          # Data access layer
+│   │   │   └── postgres/        # PostgreSQL implementation
+│   │   ├── service/             # Business logic
+│   │   └── handlers/            # HTTP handlers
+│   └── tests/                   # Backend tests
+├── frontend/                     # React frontend application
 │   ├── src/
 │   │   ├── pages/               # Page components
-│   │   │   ├── Dashboard.js     # Dashboard with KPIs
-│   │   │   ├── Inventory.js     # Inventory management with edit/delete
-│   │   │   ├── Customers.js     # Customer management with edit/delete
-│   │   │   ├── Transactions.js  # Transaction ledger with edit/delete
-│   │   │   ├── Crates.js        # Crate management with edit/delete
-│   │   │   ├── Wastage.js       # Wastage tracking with edit/delete
-│   │   │   ├── ExpiryAlerts.js  # Expiry alerts with delete
-│   │   │   ├── Forecasting.js   # AI forecasting
-│   │   │   ├── Reports.js       # Report generation
-│   │   │   ├── Login.js         # Login page
-│   │   │   └── Register.js      # Registration page
 │   │   ├── components/          # Reusable components
-│   │   │   ├── Layout.js        # Main layout with sidebar
-│   │   │   ├── DeleteConfirmationModal.js  # Delete confirmation with attestation
-│   │   │   └── ui/              # UI component library
-│   │   │       ├── Badge.js     # Badge component
-│   │   │       ├── Button.js    # Button component
-│   │   │       ├── Card.js      # Card component
-│   │   │       ├── Input.js     # Input component
-│   │   │       ├── Modal.js     # Modal component
-│   │   │       ├── Select.js    # Select component
-│   │   │       └── Toast.js     # Toast notification component
-│   │   ├── services/            # API client
-│   │   │   └── api.js           # Axios client with all API methods
-│   │   ├── context/             # React context
-│   │   │   └── AuthContext.js   # Authentication context
-│   │   ├── styles/              # Global styles
-│   │   │   └── variables.css    # CSS variables
-│   │   └── App.js               # Main app with routing
-│   ├── public/                  # Static files
-│   ├── Dockerfile               # Frontend container
-│   └── nginx.conf               # Nginx configuration
+│   │   ├── services/api.js      # API client
+│   │   └── context/             # React context
+│   └── public/                  # Static files
 ├── infra/
 │   ├── migrations/              # Database migrations
-│   │   ├── 001_init.sql        # Initial schema
-│   │   ├── 002_users.sql       # Users table
-│   │   ├── 003_add_indexes.sql # Performance indexes
-│   │   └── 004_enhance_entities.sql  # Enhanced fields & audit columns
-│   ├── local/                   # Local development data
-│   │   ├── demo_simple.sql     # Demo data (45 inventory, 15 customers, etc.)
-│   │   └── demo_seed.sql       # Alternative seed data
-│   ├── terraform/               # Infrastructure as Code
-│   └── cloudbuild.yaml          # Google Cloud Build config
+│   ├── local/                   # Demo/seed data
+│   └── terraform/               # Infrastructure as Code
 ├── docs/                        # Documentation
-│   ├── API.md                   # API documentation
-│   ├── DEPLOYMENT.md            # Deployment guide
-│   ├── ENHANCED_ENTITIES.md     # Enhanced entity documentation
-│   ├── ENTITY_FIELDS_SUMMARY.md # Field reference
-│   └── ER.sql                   # Database schema reference
-├── docker-compose.yml           # Local development setup
-├── .env.example                 # Environment variables template
+├── SETUP.md                     # Setup guide
+├── ARCHITECTURE.md              # Architecture docs
+├── docker-compose.yml           # Local development
 └── README.md                    # This file
 ```
+
+For detailed architecture, see [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ## Features Walkthrough
 
 ### Dashboard
 - View key metrics: customers, expiring items, sales, outstanding balances
-- Quick action buttons for common tasks
-- Recent activity feed
-- Real-time inventory status overview
+- **Real-time charts:** Sales trend (last 7 days) and top products (by quantity)
+- Quick action buttons and recent activity feed
 
-### Inventory Management
-- FEFO (First Expired First Out) sorting
+### Inventory Management (45 demo items)
+- FEFO (First Expired First Out) sorting by expiry date
 - Visual status badges (Fresh, Expiring Soon, Expired)
-- Filter by status
-- **Full CRUD operations**: Add, edit, update, soft delete with attestation
-- Track 35+ fields including lot numbers, quantities, expiry dates, suppliers, pricing, storage location
-- Comprehensive inventory details with cost price, selling price, margin calculation
+- Complete CRUD with 35+ fields including suppliers, pricing, storage
 
-### Customer Management
-- Complete customer information with 26+ fields
-- KYC verification status (Aadhaar, documents)
-- Contact details (phone, WhatsApp, alternate)
-- Business information (GSTIN, business name)
-- Credit management (limit, current balance, payment terms)
-- Tags and categorization (retail/wholesale)
-- **Full CRUD operations** with edit and soft delete functionality
+### Customer Management (15 demo customers)
+- B2B, wholesale, and retail customer types
+- KYC verification, GSTIN, credit limits
+- 26+ fields with full CRUD operations
 
-### Transaction Ledger (Digital Patti Book)
-- Record sales and payments with 21+ fields
-- Multi-item sales with automatic inventory deduction
-- Payment tracking (method, reference, due dates)
-- Discount and tax management
-- Delivery status tracking
-- Transaction filtering by type and customer
-- **Full edit and soft delete** with audit trail
-- Complete transaction history
+### Transaction Ledger (12 demo transactions)
+- Digital patti book with multi-item sales
+- **Real sale items:** Tracks actual products sold (Tomato, Onion, etc.)
+- Payment tracking, discounts, taxes, delivery status
 
 ### Crate Management
 - Track returnable crates per customer
-- Issue and return crates with balance tracking
-- View balance for each customer
-- **Edit and soft delete** crate entries
-- Complete transaction history with notes
+- Issue/return with automatic balance calculation
 
-### Wastage Tracking
+### Wastage Tracking (5 demo logs)
 - Log damaged, expired, contaminated items
-- Track cost impact of wastage
-- Categorize by reason (expired, damaged, contaminated, spillage, other)
-- Photo documentation support
-- **Edit and soft delete** wastage entries
-- Complete audit trail
+- Cost impact tracking with photo support
 
-### Expiry Alerts
+### Expiry Alerts (7 demo alerts)
 - Automatic alerts for items approaching expiry
-- Days until expiry calculation
-- Urgency badges (Critical, Urgent, Moderate)
-- Acknowledge alerts with timestamp
-- **Soft delete** functionality with attestation
-- Filter by acknowledged status
+- Urgency levels: Critical (< 3 days), Urgent (3-7 days), Moderate (> 7 days)
 
-### AI Forecasting
+### AI Forecasting & Reports
 - Demand prediction using Google Gemini AI
-- Historical data analysis
-- Configurable forecast period
-- Confidence levels and summaries
-
-### Reports
-- Sales reports with top items
-- Inventory status reports
-- Customer financial statements
+- Sales, inventory, and customer financial reports
 - Print-friendly layouts
-- Date range filtering
 
-### Audit & Compliance Features
-- **Nothing is truly deleted** - All records preserved with soft delete markers
-- **Complete audit trail** - Track who deleted, when, why, and attestation
-- **Attestation requirement** - Users must type "I CONFIRM DELETE" exactly
-- **Deletion reason mandatory** - Text explanation required for all deletions
-- **Restorable records** - Soft-deleted items can be restored by clearing deleted_at
-- **Updated tracking** - Track who updated records and when (updated_at, updated_by)
+## Audit & Security Features
 
-## Security
+### Soft Delete with Audit Trail
+- **Nothing is truly deleted** - All records preserved
+- **Deletion reason mandatory** - Every delete requires explanation
+- **Attestation required** - Users must type "I CONFIRM DELETE"
+- **Track who, when, why** - Complete audit trail (deleted_at, deleted_by, deletion_reason)
+- **Restorable** - Soft-deleted items can be restored by clearing deleted_at
 
-- JWT-based authentication with protected routes
-- Password hashing with bcrypt
+### Security
+- JWT authentication with password hashing (bcrypt)
+- Protected routes requiring valid token
 - Environment-based secrets (no hardcoded credentials)
 - CORS enabled for frontend-backend communication
-- Database transaction integrity
-- Input validation and error handling
-- **Audit trail compliance** - All deletions tracked with who, when, why
-- **Soft delete protection** - No data loss, all records restorable
-- **Attestation requirement** - Prevents accidental deletions
 - SQL injection protection with parameterized queries
+- Input validation and error handling on all endpoints
 
 ## Support
 
-For issues and questions, please open an issue on GitHub.
+- **Issues:** https://github.com/vineethtatipatri19/VMS/issues
+- **Quick Reference:** [QUICK_REFERENCE.md](QUICK_REFERENCE.md) - Essential commands
+- **Setup Help:** [SETUP.md](SETUP.md) - Detailed troubleshooting
+
+## Contributing
+
+Contributions are welcome! Please:
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-[Add your license here]
+[MIT License](LICENSE) - See LICENSE file for details
+
+## Acknowledgments
+
+- Built with Go, React, PostgreSQL, and Docker
+- Charts powered by Chart.js
+- AI forecasting via Google Gemini API
+- Icons from Lucide React
+
+---
+
+**Made with ❤️ for efficient perishable goods management**
+
+Get started in 5 minutes: See [SETUP.md](SETUP.md) | Quick commands: [QUICK_REFERENCE.md](QUICK_REFERENCE.md)

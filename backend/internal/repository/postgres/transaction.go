@@ -66,11 +66,16 @@ func (r *transactionRepository) GetByID(ctx context.Context, id string) (*domain
 }
 
 func (r *transactionRepository) ListByCustomer(ctx context.Context, customerID string) ([]*domain.Transaction, error) {
-	query := `SELECT id, customer_id, date, type, payment_amount, total_amount,
-		payment_method, payment_reference, notes, created_at
-	FROM transactions 
-	WHERE customer_id = $1 AND deleted_at IS NULL
-	ORDER BY created_at DESC`
+	query := `
+		SELECT id, customer_id, date, type, payment_amount, total_amount,
+			payment_method, payment_reference, notes, status, invoice_number,
+			sale_type, delivery_status, delivery_date, delivery_address,
+			discount_amount, tax_amount, balance_after, receipt_sent,
+			due_date, is_overdue, created_at
+		FROM transactions
+		WHERE customer_id = $1 AND deleted_at IS NULL
+		ORDER BY date DESC
+	`
 
 	rows, err := r.db.QueryContext(ctx, query, customerID)
 	if err != nil {
@@ -81,11 +86,15 @@ func (r *transactionRepository) ListByCustomer(ctx context.Context, customerID s
 	transactions := []*domain.Transaction{}
 	for rows.Next() {
 		var tx domain.Transaction
-		var paymentMethod, paymentRef, notes sql.NullString
+		var paymentMethod, paymentRef, notes, status, invoiceNumber, saleType, deliveryStatus, deliveryAddress sql.NullString
+		var dueDate, deliveryDate sql.NullTime
 
 		if err := rows.Scan(
 			&tx.ID, &tx.CustomerID, &tx.Date, &tx.Type, &tx.PaymentAmount, &tx.TotalAmount,
-			&paymentMethod, &paymentRef, &notes, &tx.CreatedAt,
+			&paymentMethod, &paymentRef, &notes, &status, &invoiceNumber,
+			&saleType, &deliveryStatus, &deliveryDate, &deliveryAddress,
+			&tx.DiscountAmount, &tx.TaxAmount, &tx.BalanceAfter, &tx.ReceiptSent,
+			&dueDate, &tx.IsOverdue, &tx.CreatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan transaction: %w", err)
 		}
@@ -93,6 +102,17 @@ func (r *transactionRepository) ListByCustomer(ctx context.Context, customerID s
 		tx.PaymentMethod = fromNullString(paymentMethod)
 		tx.PaymentRef = fromNullString(paymentRef)
 		tx.Notes = fromNullString(notes)
+		tx.Status = fromNullString(status)
+		tx.InvoiceNumber = fromNullString(invoiceNumber)
+		tx.SaleType = fromNullString(saleType)
+		tx.DeliveryStatus = fromNullString(deliveryStatus)
+		tx.DeliveryAddress = fromNullString(deliveryAddress)
+		if dueDate.Valid {
+			tx.DueDate = &dueDate.Time
+		}
+		if deliveryDate.Valid {
+			tx.DeliveryDate = &deliveryDate.Time
+		}
 
 		transactions = append(transactions, &tx)
 	}
@@ -102,7 +122,10 @@ func (r *transactionRepository) ListByCustomer(ctx context.Context, customerID s
 
 func (r *transactionRepository) List(ctx context.Context, txType string, startDate, endDate time.Time) ([]*domain.Transaction, error) {
 	query := `SELECT id, customer_id, date, type, payment_amount, total_amount,
-		payment_method, payment_reference, notes, created_at
+		payment_method, payment_reference, notes, status, invoice_number,
+		sale_type, delivery_status, delivery_date, delivery_address,
+		discount_amount, tax_amount, balance_after, receipt_sent,
+		due_date, is_overdue, created_at
 	FROM transactions 
 	WHERE deleted_at IS NULL`
 
@@ -138,11 +161,15 @@ func (r *transactionRepository) List(ctx context.Context, txType string, startDa
 	transactions := []*domain.Transaction{}
 	for rows.Next() {
 		var tx domain.Transaction
-		var paymentMethod, paymentRef, notes sql.NullString
+		var paymentMethod, paymentRef, notes, status, invoiceNumber, saleType, deliveryStatus, deliveryAddress sql.NullString
+		var dueDate, deliveryDate sql.NullTime
 
 		if err := rows.Scan(
 			&tx.ID, &tx.CustomerID, &tx.Date, &tx.Type, &tx.PaymentAmount, &tx.TotalAmount,
-			&paymentMethod, &paymentRef, &notes, &tx.CreatedAt,
+			&paymentMethod, &paymentRef, &notes, &status, &invoiceNumber,
+			&saleType, &deliveryStatus, &deliveryDate, &deliveryAddress,
+			&tx.DiscountAmount, &tx.TaxAmount, &tx.BalanceAfter, &tx.ReceiptSent,
+			&dueDate, &tx.IsOverdue, &tx.CreatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan transaction: %w", err)
 		}
@@ -150,8 +177,24 @@ func (r *transactionRepository) List(ctx context.Context, txType string, startDa
 		tx.PaymentMethod = fromNullString(paymentMethod)
 		tx.PaymentRef = fromNullString(paymentRef)
 		tx.Notes = fromNullString(notes)
+		tx.Status = fromNullString(status)
+		tx.InvoiceNumber = fromNullString(invoiceNumber)
+		tx.SaleType = fromNullString(saleType)
+		tx.DeliveryStatus = fromNullString(deliveryStatus)
+		tx.DeliveryAddress = fromNullString(deliveryAddress)
+		if dueDate.Valid {
+			tx.DueDate = &dueDate.Time
+		}
+		if deliveryDate.Valid {
+			tx.DeliveryDate = &deliveryDate.Time
+		}
 
 		transactions = append(transactions, &tx)
+	}
+
+	// Populate sale items for all transactions
+	if err := r.populateSaleItems(ctx, transactions); err != nil {
+		return nil, fmt.Errorf("failed to populate sale items: %w", err)
 	}
 
 	return transactions, nil
@@ -194,6 +237,67 @@ func (r *transactionRepository) Delete(ctx context.Context, id string, req *doma
 	rows, err := result.RowsAffected()
 	if err != nil || rows == 0 {
 		return domain.ErrNotFound
+	}
+
+	return nil
+}
+
+// populateSaleItems fetches and populates sale items for transactions
+func (r *transactionRepository) populateSaleItems(ctx context.Context, transactions []*domain.Transaction) error {
+	if len(transactions) == 0 {
+		return nil
+	}
+
+	// Build list of transaction IDs
+	txIDs := make([]string, len(transactions))
+	txMap := make(map[string]*domain.Transaction)
+	for i, tx := range transactions {
+		txIDs[i] = tx.ID
+		txMap[tx.ID] = tx
+		// Initialize Details map
+		tx.Details = make(map[string]interface{})
+	}
+
+	// Query sale items for all transactions
+	query := `SELECT transaction_id, item_name, quantity, unit, price_per_unit, total
+		FROM sale_items
+		WHERE transaction_id = ANY($1)
+		ORDER BY transaction_id, item_name`
+
+	rows, err := r.db.QueryContext(ctx, query, txIDs)
+	if err != nil {
+		return fmt.Errorf("failed to query sale items: %w", err)
+	}
+	defer rows.Close()
+
+	// Group items by transaction
+	itemsByTx := make(map[string][]map[string]interface{})
+	for rows.Next() {
+		var txID, itemName, unit string
+		var quantity, pricePerUnit, total float64
+
+		if err := rows.Scan(&txID, &itemName, &quantity, &unit, &pricePerUnit, &total); err != nil {
+			return fmt.Errorf("failed to scan sale item: %w", err)
+		}
+
+		item := map[string]interface{}{
+			"item_name":      itemName,
+			"ItemName":       itemName, // Add both formats for compatibility
+			"quantity":       quantity,
+			"Quantity":       quantity,
+			"unit":           unit,
+			"price_per_unit": pricePerUnit,
+			"total":          total,
+		}
+
+		itemsByTx[txID] = append(itemsByTx[txID], item)
+	}
+
+	// Populate Details for each transaction
+	for txID, items := range itemsByTx {
+		if tx, ok := txMap[txID]; ok {
+			tx.Details["items"] = items
+		}
 	}
 
 	return nil

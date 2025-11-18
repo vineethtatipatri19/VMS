@@ -3,6 +3,7 @@ import { inventoryAPI } from '../services/api';
 import { Card, Button, Badge, Input, Select, Modal, useToast } from '../components/ui';
 import { Package, Plus, Edit2, Trash2, Search } from 'lucide-react';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
+import { normalizeInventory, formatCurrency, formatDate, getStatusVariant } from '../utils/dataHelpers';
 
 function Inventory() {
   const toast = useToast();
@@ -50,10 +51,17 @@ function Inventory() {
     try {
       const params = filter ? { status: filter } : { sort: 'expiry' };
       const res = await inventoryAPI.getAll(params);
-      setInventory(res.data);
+      console.log('Inventory API Response:', res);
+      console.log('Response data:', res.data);
+      const dataArray = res.data.data || res.data || [];
+      console.log('Data array:', dataArray);
+      const normalized = dataArray.map(normalizeInventory);
+      console.log('Normalized inventory:', normalized);
+      setInventory(normalized);
     } catch (err) {
       setError('Failed to load inventory');
-      console.error(err);
+      console.error('Error fetching inventory:', err);
+      console.error('Error response:', err.response);
     } finally {
       setLoading(false);
     }
