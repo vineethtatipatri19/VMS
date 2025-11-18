@@ -5,7 +5,9 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -13,7 +15,15 @@ import (
 	"github.com/google/uuid"
 )
 
-var jwtKey = []byte("replace-this-with-secure-secret")
+var jwtKey = []byte(getJWTSecret())
+
+func getJWTSecret() string {
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		return "default-secret-change-in-production"
+	}
+	return secret
+}
 
 type User struct {
 	ID string `json:"id,omitempty"`
@@ -77,12 +87,41 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 func authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		auth := r.Header.Get("Authorization")
-		if auth=="" { http.Error(w, "missing auth", 401); return }
+		log.Printf("Auth header: %s", auth)
+		if auth=="" { 
+			w.Header().Set("Content-Type", "application/json")
+			http.Error(w, `{"error":"missing authorization header"}`, 401)
+			return 
+		}
 		var tokenString string
-		if len(auth) > 7 && auth[:7] == "Bearer " { tokenString = auth[7:] } else { http.Error(w, "invalid auth header", 401); return }
+		if len(auth) > 7 && auth[:7] == "Bearer " { 
+			tokenString = auth[7:]
+			log.Printf("Token string length: %d", len(tokenString))
+		} else { 
+			w.Header().Set("Content-Type", "application/json")
+			http.Error(w, `{"error":"invalid auth header format, use: Bearer <token>"}`, 401)
+			return 
+		}
 		claims := &Claims{}
-		token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) { return jwtKey, nil })
-		if err!=nil || !token.Valid { http.Error(w, "invalid token", 401); return }
+		log.Printf("Using JWT secret length: %d", len(jwtKey))
+		token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) { 
+			log.Printf("In key func, returning key")
+			return jwtKey, nil 
+		})
+		if err!=nil || !token.Valid { 
+			w.Header().Set("Content-Type", "application/json")
+			errMsg := "invalid or expired token"
+			if err != nil {
+				errMsg = err.Error()
+				log.Printf("JWT Parse Error: %v", err)
+			}
+			if token != nil && !token.Valid {
+				log.Printf("Token invalid but parsed. Valid=%v", token.Valid)
+			}
+			http.Error(w, `{"error":"`+errMsg+`"}`, 401)
+			return 
+		}
+		log.Printf("Token valid for user: %s", claims.UserID)
 		// Store user id in context
 		ctx := context.WithValue(r.Context(), "userId", claims.UserID)
 		next.ServeHTTP(w, r.WithContext(ctx))

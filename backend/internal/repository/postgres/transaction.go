@@ -21,7 +21,7 @@ func NewTransactionRepository(db *sql.DB) repository.TransactionRepository {
 func (r *transactionRepository) Create(ctx context.Context, tx *domain.Transaction) error {
 	query := `INSERT INTO transactions (
 		id, customer_id, date, type, payment_amount, total_amount,
-		payment_method, payment_ref, notes, status, created_at
+		payment_method, payment_reference, notes, status, created_at
 	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`
 
 	_, err := r.db.ExecContext(ctx, query,
@@ -38,7 +38,7 @@ func (r *transactionRepository) Create(ctx context.Context, tx *domain.Transacti
 
 func (r *transactionRepository) GetByID(ctx context.Context, id string) (*domain.Transaction, error) {
 	query := `SELECT id, customer_id, date, type, payment_amount, total_amount,
-		payment_method, payment_ref, notes, status, created_at
+		payment_method, payment_reference, notes, status, created_at
 	FROM transactions 
 	WHERE id = $1 AND deleted_at IS NULL`
 
@@ -67,7 +67,7 @@ func (r *transactionRepository) GetByID(ctx context.Context, id string) (*domain
 
 func (r *transactionRepository) ListByCustomer(ctx context.Context, customerID string) ([]*domain.Transaction, error) {
 	query := `SELECT id, customer_id, date, type, payment_amount, total_amount,
-		payment_method, payment_ref, notes, created_at
+		payment_method, payment_reference, notes, created_at
 	FROM transactions 
 	WHERE customer_id = $1 AND deleted_at IS NULL
 	ORDER BY created_at DESC`
@@ -102,7 +102,7 @@ func (r *transactionRepository) ListByCustomer(ctx context.Context, customerID s
 
 func (r *transactionRepository) List(ctx context.Context, txType string, startDate, endDate time.Time) ([]*domain.Transaction, error) {
 	query := `SELECT id, customer_id, date, type, payment_amount, total_amount,
-		payment_method, payment_ref, notes, created_at
+		payment_method, payment_reference, notes, created_at
 	FROM transactions 
 	WHERE deleted_at IS NULL`
 
@@ -160,7 +160,7 @@ func (r *transactionRepository) List(ctx context.Context, txType string, startDa
 func (r *transactionRepository) Update(ctx context.Context, tx *domain.Transaction) error {
 	query := `UPDATE transactions SET
 		payment_amount = $2, total_amount = $3, payment_method = $4,
-		payment_ref = $5, notes = $6
+		payment_reference = $5, notes = $6
 	WHERE id = $1 AND deleted_at IS NULL`
 
 	result, err := r.db.ExecContext(ctx, query,
