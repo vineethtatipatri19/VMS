@@ -5,7 +5,7 @@ import (
 "time"
 
 "github.com/example/pgvms/internal/domain"
-"github.com/example/pgvms/internal/httputil"
+"github.com/example/pgvms/internal/pkg/httputil"
 "github.com/example/pgvms/internal/service"
 "github.com/gorilla/mux"
 )

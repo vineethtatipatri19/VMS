@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/example/pgvms/internal/config"
@@ -58,6 +59,7 @@ func main() {
 	wastageRepo := postgres.NewWastageRepository(db)
 	expiryRepo := postgres.NewExpiryAlertRepository(db)
 	paymentRepo := postgres.NewPaymentScheduleRepository(db)
+	userRepo := postgres.NewUserRepository(db)
 
 	// Initialize services with repository dependencies
 	customerService := service.NewCustomerService(customerRepo)
@@ -73,6 +75,10 @@ func main() {
 	wastageService := service.NewWastageService(wastageRepo, inventoryRepo)
 	expiryService := service.NewExpiryService(expiryRepo, inventoryRepo)
 	paymentService := service.NewPaymentService(paymentRepo, transactionRepo, customerRepo)
+	authService := service.NewAuthService(userRepo, cfg.JWT.Secret)
+	dashboardService := service.NewDashboardService(db)
+	reportService := service.NewReportService(db)
+	forecastService := service.NewForecastService(db, os.Getenv("GEMINI_API_KEY"))
 
 	// Initialize handlers with service dependencies
 	customerHandler := handlers.NewCustomerHandler(customerService)
@@ -83,6 +89,10 @@ func main() {
 	wastageHandler := handlers.NewWastageHandler(wastageService)
 	expiryHandler := handlers.NewExpiryHandler(expiryService)
 	paymentHandler := handlers.NewPaymentHandler(paymentService)
+	authHandler := handlers.NewAuthHandler(authService)
+	dashboardHandler := handlers.NewDashboardHandler(dashboardService)
+	reportHandler := handlers.NewReportHandler(reportService)
+	forecastHandler := handlers.NewForecastHandler(forecastService)
 
 	// Setup router with all handlers
 	routerConfig := router.Config{
@@ -96,19 +106,13 @@ func main() {
 			Wastage:     wastageHandler,
 			Expiry:      expiryHandler,
 			Payment:     paymentHandler,
+			Auth:        authHandler,
+			Dashboard:   dashboardHandler,
+			Report:      reportHandler,
+			Forecast:    forecastHandler,
 
-			// Auth handlers
-			Register: registerHandler,
-			Login:    loginHandler,
-			Health:   healthHandler,
-
-			// Legacy handlers (to be refactored)
-			Dashboard:       dashboardHandler,
-			RecentActivity:  recentActivityHandler,
-			OverduePayments: getOverduePayments,
-			WastageSummary:  getWastageSummary,
-			Forecast:        forecastHandler,
-			GenerateReport:  generateReportHandler,
+			// Simple handlers
+			Health: healthHandler,
 		},
 	}
 

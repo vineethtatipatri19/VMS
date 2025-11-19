@@ -115,3 +115,21 @@ func DecodeJSON(r *http.Request, v interface{}) error {
 	}
 	return nil
 }
+
+// RespondSuccess sends a successful response with data
+func RespondSuccess(w http.ResponseWriter, statusCode int, data interface{}) {
+	SendJSON(w, statusCode, data)
+}
+
+// RespondError sends an error response
+func RespondError(w http.ResponseWriter, statusCode int, code, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	json.NewEncoder(w).Encode(Response{
+		Success: false,
+		Error: &ErrorData{
+			Code:    code,
+			Message: message,
+		},
+	})
+}

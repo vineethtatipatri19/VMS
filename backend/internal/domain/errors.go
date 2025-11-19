@@ -12,6 +12,7 @@ var (
 	ErrInvalidOperation   = errors.New("invalid operation")
 	ErrUnauthorized       = errors.New("unauthorized")
 	ErrForbidden          = errors.New("forbidden")
+	ErrValidation         = errors.New("validation error")
 	ErrInvalidAttestation = errors.New("invalid attestation - must type 'I CONFIRM DELETE' exactly")
 	ErrMissingReason      = errors.New("deletion reason is required")
 )
@@ -31,6 +32,11 @@ func (e *ValidationError) Error() string {
 
 // ErrInvalidInput creates a validation error
 func ErrInvalidInput(message string) error {
+	return &ValidationError{Message: message}
+}
+
+// NewValidationError creates a validation error with a message
+func NewValidationError(message string) error {
 	return &ValidationError{Message: message}
 }
 

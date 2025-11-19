@@ -24,19 +24,13 @@ type Handlers struct {
 	Wastage     *handlers.WastageHandler
 	Expiry      *handlers.ExpiryHandler
 	Payment     *handlers.PaymentHandler
+	Auth        *handlers.AuthHandler
+	Dashboard   *handlers.DashboardHandler
+	Report      *handlers.ReportHandler
+	Forecast    *handlers.ForecastHandler
 
-	// Auth handlers (from old main.go)
-	Register http.HandlerFunc
-	Login    http.HandlerFunc
-	Health   http.HandlerFunc
-
-	// Legacy handlers (to be migrated)
-	Dashboard       http.HandlerFunc
-	RecentActivity  http.HandlerFunc
-	OverduePayments http.HandlerFunc
-	WastageSummary  http.HandlerFunc
-	Forecast        http.HandlerFunc
-	GenerateReport  http.HandlerFunc
+	// Simple handlers
+	Health http.HandlerFunc
 }
 
 // Setup creates and configures the main router with all routes and middleware
@@ -64,16 +58,16 @@ func Setup(cfg Config) *mux.Router {
 
 // registerPublicRoutes sets up routes that don't require authentication
 func registerPublicRoutes(r *mux.Router, h *Handlers) {
-	r.HandleFunc("/register", h.Register).Methods(http.MethodPost, http.MethodOptions)
-	r.HandleFunc("/login", h.Login).Methods(http.MethodPost, http.MethodOptions)
+	r.HandleFunc("/register", h.Auth.Register).Methods(http.MethodPost, http.MethodOptions)
+	r.HandleFunc("/login", h.Auth.Login).Methods(http.MethodPost, http.MethodOptions)
 } // registerProtectedRoutes sets up routes that require authentication
 func registerProtectedRoutes(r *mux.Router, h *Handlers) {
 	// Health check
 	r.HandleFunc("/health", h.Health).Methods(http.MethodGet)
 
 	// Dashboard
-	r.HandleFunc("/dashboard", h.Dashboard).Methods(http.MethodGet)
-	r.HandleFunc("/dashboard/activity", h.RecentActivity).Methods(http.MethodGet)
+	r.HandleFunc("/dashboard", h.Dashboard.GetStats).Methods(http.MethodGet)
+	r.HandleFunc("/dashboard/activity", h.Dashboard.GetRecentActivity).Methods(http.MethodGet)
 
 	// Register resource-specific routes
 	registerCustomerRoutes(r, h.Customer)
@@ -86,10 +80,8 @@ func registerProtectedRoutes(r *mux.Router, h *Handlers) {
 	registerPaymentRoutes(r, h.Payment)
 
 	// Reports
-	r.HandleFunc("/reports/overdue-payments", h.OverduePayments).Methods(http.MethodGet)
-	r.HandleFunc("/reports/wastage-summary", h.WastageSummary).Methods(http.MethodGet)
-	r.HandleFunc("/reports/generate", h.GenerateReport).Methods(http.MethodPost)
+	r.HandleFunc("/reports/generate", h.Report.GenerateReport).Methods(http.MethodPost)
 
 	// Forecasting (AI)
-	r.HandleFunc("/forecast", h.Forecast).Methods(http.MethodPost)
+	r.HandleFunc("/forecast", h.Forecast.GenerateForecast).Methods(http.MethodPost)
 }
