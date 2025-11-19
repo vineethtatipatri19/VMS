@@ -291,20 +291,74 @@ docker exec pgvms-postgres psql -U pgvms_user -d pgvms -c "UPDATE sale_items si 
 - Backend logs show: `Migration warning: first .: file does not exist`
 - Tables are not created automatically
 - API returns `column "deleted_at" does not exist` errors
+- Database initialization fails when demo SQL files try to insert data before tables exist
 
-**Solution:** Run migrations manually:
+**Root Cause:**
+The golang-migrate library in the backend expects migration files with `.up.sql` and `.down.sql` suffixes, but our migration files use just `.sql`. Additionally, when demo data SQL files are mounted to the PostgreSQL init directory, they run before tables are created, causing failures.
+
+**Solution 1: Use the Updated setup.sh Script (Recommended)**
+
+The `setup.sh` script now handles migrations correctly:
 
 ```bash
-# Run all 7 migrations in order
+bash setup.sh
+```
+
+This script:
+1. Starts all services WITHOUT demo data auto-loading
+2. Waits for database to be ready
+3. Runs all 7 migrations manually in order
+4. Then loads demo data after tables exist
+5. Creates demo user account
+
+**Solution 2: Manual Migration (If setup.sh fails)**
+
+```bash
+# 1. Start services
+docker-compose up -d
+
+# 2. Wait for database to be ready
+sleep 10
+
+# 3. Run all 7 migrations in order
 for file in infra/migrations/*.sql; do 
+  echo "Applying $(basename $file)..."
   docker exec -i pgvms-postgres psql -U pgvms_user -d pgvms < "$file"
 done
 
-# Verify migrations succeeded
+# 4. Verify migrations succeeded
 docker exec pgvms-postgres psql -U pgvms_user -d pgvms -c "\dt"
+
+# Should show these tables:
+# customers, inventory_items, transactions, sale_items, crate_ledger
+# wastage_log, expiry_alerts, users, payment_schedules, pricing_tiers, price_history
+
+# 5. Load demo data
+docker exec -i pgvms-postgres psql -U pgvms_user -d pgvms < infra/local/demo_simple.sql
+docker exec -i pgvms-postgres psql -U pgvms_user -d pgvms < infra/local/demo_additional_data.sql
+
+# 6. Create demo user
+bash setup-demo-user.sh
 ```
 
-**Note:** Migration 007 (`007_add_soft_delete.sql`) is critical - it adds the `deleted_at`, `deleted_by`, and `deletion_reason` columns required by the repository layer.
+**What Changed in docker-compose.yml:**
+
+The database service no longer auto-mounts demo data during initialization:
+
+```yaml
+# OLD (causes issues):
+volumes:
+  - postgres_data:/var/lib/postgresql/data
+  - ./infra/local:/docker-entrypoint-initdb.d:ro  # ❌ Removed
+
+# NEW (correct):
+volumes:
+  - postgres_data:/var/lib/postgresql/data  # ✅ Only data persistence
+```
+
+This prevents demo data SQL from running before migrations create the necessary tables.
+
+**Note:** Migration 007 (`007_add_soft_delete.sql`) is critical - it adds the `deleted_at`, `deleted_by`, and `deletion_reason` columns required by the audit trail system.
 
 ### Port Already in Use
 

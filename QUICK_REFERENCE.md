@@ -262,6 +262,22 @@ Frontend: http://localhost:3000/dashboard
 
 ## Troubleshooting Quick Fixes
 
+### "Migration warning: first .: file does not exist"
+```bash
+# This means automatic migrations failed
+# Run migrations manually:
+for file in infra/migrations/*.sql; do 
+  echo "Running $(basename $file)..."
+  docker exec -i pgvms-postgres psql -U pgvms_user -d pgvms < "$file"
+done
+
+# Verify all 11 tables exist
+docker exec pgvms-postgres psql -U pgvms_user -d pgvms -c "\dt"
+
+# Restart backend after migrations
+docker-compose restart backend
+```
+
 ### "Cannot connect to backend"
 ```bash
 # Check backend is running

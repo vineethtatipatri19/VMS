@@ -117,13 +117,18 @@ done
 # Run database migrations
 echo ""
 echo -e "${BLUE}📊 Running database migrations...${NC}"
+MIGRATION_COUNT=0
 for file in infra/migrations/*.sql; do 
     filename=$(basename "$file")
     echo -e "${YELLOW}   → ${filename}${NC}"
-    docker exec -i pgvms-postgres psql -U pgvms_user -d pgvms < "$file" 2>&1 | \
-        grep -v "NOTICE" | grep -v "already exists" | grep -v "will create implicit" || true
+    if docker exec -i pgvms-postgres psql -U pgvms_user -d pgvms < "$file" 2>&1 | \
+        grep -i "ERROR" > /dev/null; then
+        echo -e "${YELLOW}   ⚠ Migration may have already been applied${NC}"
+    else
+        MIGRATION_COUNT=$((MIGRATION_COUNT + 1))
+    fi
 done
-echo -e "${GREEN}✅ Migrations complete (7 migrations applied)${NC}"
+echo -e "${GREEN}✅ Migrations complete (${MIGRATION_COUNT} migrations applied)${NC}"
 
 # Load demo data
 echo ""
@@ -138,8 +143,8 @@ if [ "$CUSTOMER_COUNT" -eq "0" ]; then
     echo -e "${YELLOW}   Loading transactions, crates, wastage, and alerts...${NC}"
     docker exec -i pgvms-postgres psql -U pgvms_user -d pgvms < infra/local/demo_additional_data.sql > /dev/null 2>&1
     
-    # Fix sale_items data
-    docker exec pgvms-postgres psql -U pgvms_user -d pgvms -c "UPDATE sale_items si SET item_name = i.name || ' - ' || i.variant, unit = 'kg' FROM inventory_items i WHERE si.inventory_lot_id = i.id AND si.item_name IS NULL;" > /dev/null 2>&1
+    # Fix sale_items data (critical for transactions to work)
+    docker exec pgvms-postgres psql -U pgvms_user -d pgvms -c "UPDATE sale_items si SET item_name = i.name || COALESCE(' - ' || i.variant, ''), unit = COALESCE(si.unit, 'kg') FROM inventory_items i WHERE si.inventory_lot_id = i.id AND si.item_name IS NULL;" > /dev/null 2>&1
     
     echo -e "${GREEN}   ✓ Loaded 4 transactions, 5 crate entries, 7 wastage logs, 12 alerts${NC}"
 else
@@ -189,7 +194,9 @@ if [ "$ENVIRONMENT" = "codespaces" ]; then
     echo -e "${BLUE}💡 Codespaces Tips:${NC}"
     echo -e "   • Ports are automatically forwarded"
     echo -e "   • Click the 'Ports' tab to see all services"
-    echo -e "   • Click the globe icon (🌐) next to port 3000"
+    echo -e "   • ${YELLOW}Make sure ports 3000 and 8080 are PUBLIC${NC}"
+    echo -e "   • Right-click port → Port Visibility → Public"
+    echo -e "   • Then click the globe icon (🌐) next to port 3000"
     echo ""
 fi
 
