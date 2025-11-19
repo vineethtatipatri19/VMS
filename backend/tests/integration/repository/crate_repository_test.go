@@ -32,8 +32,9 @@ func TestCrateRepository_Integration(t *testing.T) {
 		crate := testutil.FixtureCrateEntry(func(c *domain.CrateEntry) {
 			c.ID = testutil.GenerateUUID()
 			c.CustomerID = customer.ID
-			c.TransactionType = "in"
-			c.Quantity = 10
+			c.CratesIssued = 10
+			c.CratesReturned = 0
+			c.Balance = 10
 		})
 
 		err := repo.Create(ctx, crate)
@@ -43,8 +44,8 @@ func TestCrateRepository_Integration(t *testing.T) {
 		retrieved, err := repo.GetByID(ctx, crate.ID)
 		testutil.AssertNoError(t, err)
 		testutil.AssertEqual(t, crate.CustomerID, retrieved.CustomerID)
-		testutil.AssertEqual(t, crate.TransactionType, retrieved.TransactionType)
-		testutil.AssertEqual(t, crate.Quantity, retrieved.Quantity)
+		testutil.AssertEqual(t, crate.CratesIssued, retrieved.CratesIssued)
+		testutil.AssertEqual(t, crate.Balance, retrieved.Balance)
 	})
 
 	t.Run("ListByCustomer returns customer crates", func(t *testing.T) {
@@ -59,8 +60,9 @@ func TestCrateRepository_Integration(t *testing.T) {
 			crate := testutil.FixtureCrateEntry(func(c *domain.CrateEntry) {
 				c.ID = testutil.GenerateUUID()
 				c.CustomerID = customer.ID
-				c.TransactionType = "in"
-				c.Quantity = i * 5
+				c.CratesIssued = 10
+				c.CratesReturned = 0
+				c.Balance = i * 5
 			})
 			testutil.AssertNoError(t, repo.Create(ctx, crate))
 		}
@@ -85,22 +87,22 @@ func TestCrateRepository_Integration(t *testing.T) {
 		crate := testutil.FixtureCrateEntry(func(c *domain.CrateEntry) {
 			c.ID = testutil.GenerateUUID()
 			c.CustomerID = customer.ID
-			c.TransactionType = "in"
-			c.Quantity = 10
+			c.CratesIssued = 10
+			c.CratesReturned = 0
+			c.Balance = 10
 		})
 		testutil.AssertNoError(t, repo.Create(ctx, crate))
 
 		// Update
-		crate.Quantity = 15
-		crate.TransactionType = "out"
+		crate.Balance = 5
+		crate.CratesReturned = 5
 		err := repo.Update(ctx, crate)
 		testutil.AssertNoError(t, err)
 
 		// Verify
 		retrieved, err := repo.GetByID(ctx, crate.ID)
 		testutil.AssertNoError(t, err)
-		testutil.AssertEqual(t, 15, retrieved.Quantity)
-		testutil.AssertEqual(t, "out", retrieved.TransactionType)
+		testutil.AssertEqual(t, 5, retrieved.Balance)
 	})
 
 	t.Run("Delete CrateEntry", func(t *testing.T) {
@@ -143,8 +145,9 @@ func TestCrateRepository_Integration(t *testing.T) {
 		issued := testutil.FixtureCrateEntry(func(c *domain.CrateEntry) {
 			c.ID = testutil.GenerateUUID()
 			c.CustomerID = customer.ID
-			c.TransactionType = "out" // Crates going OUT to customer
-			c.Quantity = 20
+			c.CratesReturned = 10
+			c.CratesIssued = 0 // Crates going OUT to customer
+			c.Balance = 20
 		})
 		testutil.AssertNoError(t, repo.Create(ctx, issued))
 
@@ -152,8 +155,9 @@ func TestCrateRepository_Integration(t *testing.T) {
 		returned := testutil.FixtureCrateEntry(func(c *domain.CrateEntry) {
 			c.ID = testutil.GenerateUUID()
 			c.CustomerID = customer.ID
-			c.TransactionType = "in" // Crates coming IN from customer
-			c.Quantity = 8
+			c.CratesIssued = 10
+			c.CratesReturned = 0 // Crates coming IN from customer
+			c.Balance = 8
 		})
 		testutil.AssertNoError(t, repo.Create(ctx, returned))
 

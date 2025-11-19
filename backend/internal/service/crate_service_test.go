@@ -29,9 +29,9 @@ func TestCrateService_IssueCrates(t *testing.T) {
 
 		service := NewCrateService(mockCrateRepo, mockCustomerRepo)
 		crate := &domain.Crate{
-			CustomerID:      "c1",
-			TransactionType: "out",
-			Quantity:        10,
+			CustomerID:     "c1",
+			CratesIssued:   10,
+			CratesReturned: 0,
 		}
 
 		err := service.IssueCrates(ctx, crate)
@@ -53,9 +53,9 @@ func TestCrateService_IssueCrates(t *testing.T) {
 
 		service := NewCrateService(mockCrateRepo, mockCustomerRepo)
 		crate := &domain.Crate{
-			CustomerID:      "c1",
-			TransactionType: "out",
-			Quantity:        10,
+			CustomerID:     "c1",
+			CratesIssued:   10,
+			CratesReturned: 0,
 		}
 
 		err := service.IssueCrates(ctx, crate)
@@ -87,9 +87,9 @@ func TestCrateService_ReturnCrates(t *testing.T) {
 
 	service := NewCrateService(mockCrateRepo, mockCustomerRepo)
 	crate := &domain.Crate{
-		CustomerID:      "c1",
-		TransactionType: "in",
-		Quantity:        5,
+		CustomerID:     "c1",
+		CratesReturned: 5,
+		CratesIssued:   0,
 	}
 
 	err := service.ReturnCrates(ctx, crate)
@@ -122,8 +122,8 @@ func TestCrateService_GetCrateHistory(t *testing.T) {
 	ctx := context.Background()
 
 	crates := []*domain.Crate{
-		{ID: "cr1", CustomerID: "c1", Quantity: 10},
-		{ID: "cr2", CustomerID: "c1", Quantity: 5},
+		{ID: "cr1", CustomerID: "c1", CratesIssued: 10, CratesReturned: 0, Balance: 10},
+		{ID: "cr2", CustomerID: "c1", CratesIssued: 0, CratesReturned: 5, Balance: 5},
 	}
 	mockCrateRepo := &mocks.MockCrateRepository{
 		ListByCustomerFunc: func(ctx context.Context, customerID string) ([]*domain.Crate, error) {

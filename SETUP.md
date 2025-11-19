@@ -1,6 +1,6 @@
 # VMS - Complete Setup Guide
 
-This guide will help you get the Vendor Management System running locally in under 5 minutes.
+This guide will help you get the Vendor Management System running in under 5 minutes on any platform.
 
 ## Prerequisites
 
@@ -9,9 +9,63 @@ This guide will help you get the Vendor Management System running locally in und
 - 4GB RAM available
 - Ports 3000, 5432, and 8080 available
 
-## Quick Start (Recommended)
+## 🚀 Quick Start (Recommended)
 
-### 1. Clone and Setup
+### One-Command Setup
+
+The easiest way to get started - works on **local machines** and **GitHub Codespaces**:
+
+```bash
+# Clone the repository
+git clone https://github.com/vineethtatipatri19/VMS.git
+cd VMS
+
+# Run the unified setup script
+bash setup.sh
+```
+
+**That's it!** The script automatically:
+- ✅ Detects your environment (local or Codespaces)
+- ✅ Configures correct URLs (localhost or Codespaces URLs)
+- ✅ Builds all services (backend, frontend, database)
+- ✅ Runs 7 database migrations
+- ✅ Loads demo data (15 customers, 45 items, 4 transactions)
+- ✅ Creates demo user (demo@vms.com / demo123)
+- ✅ Verifies everything is working
+
+### Access Your Application
+
+**Local Development:**
+- Frontend: http://localhost:3000
+- Backend: http://localhost:8080/api/v1
+
+**GitHub Codespaces:**
+- URLs displayed in setup output
+- Format: `https://<codespace-name>-3000.app.github.dev`
+- Click 'Ports' tab → Globe icon next to port 3000
+
+**Login Credentials:**
+- Email: `demo@vms.com`
+- Password: `demo123`
+
+### What You Get
+
+After setup completes, you'll have:
+- **15 Customers**: Mix of B2B, wholesale, and retail
+- **45 Inventory Items**: Vegetables, fruits with expiry tracking
+- **4 Transactions**: Sales with different payment types
+- **5 Crate Ledger Entries**: Issued and returned crates
+- **7 Wastage Logs**: Spoiled, damaged, expired items
+- **12 Expiry Alerts**: Critical and warning level alerts
+- **Full Dashboard**: Real KPIs and charts
+
+---
+
+## Manual Setup (Alternative)
+
+If you prefer step-by-step control or need to troubleshoot:
+
+### 1. Clone and Configure
 
 ```bash
 # Clone the repository
@@ -23,7 +77,15 @@ cat > .env << EOF
 JWT_SECRET=local-dev-secret-change-in-production
 GEMINI_API_KEY=your-gemini-api-key-optional
 MIGRATE_ON_START=true
+REACT_APP_API_URL=http://localhost:8080/api/v1
 EOF
+```
+
+**For Codespaces**, update the API URL:
+```bash
+# Use your Codespace name
+CODESPACE_NAME="your-codespace-name"
+echo "REACT_APP_API_URL=https://${CODESPACE_NAME}-8080.app.github.dev/api/v1" >> .env
 ```
 
 ### 2. Start All Services
@@ -33,17 +95,9 @@ EOF
 docker-compose up -d --build
 ```
 
-This command will:
-- Build the backend Go application
-- Build the frontend React application
-- Start PostgreSQL database
-- Start all services in the background
-
-**Wait 30-60 seconds** for all services to fully start.
+Wait 30-60 seconds for all services to fully start.
 
 ### 3. Run Database Migrations
-
-> **Important**: Automatic migrations are currently not working due to a golang-migrate path issue. Migrations must be run manually:
 
 ```bash
 # Run all migrations (001 through 007)
@@ -52,29 +106,20 @@ for file in infra/migrations/*.sql; do
 done
 ```
 
-This will create all required tables including:
-- Customers, Inventory, Transactions, Sale Items
-- Crate Ledger, Wastage Log, Expiry Alerts
-- Users, Payment Schedules, Pricing Tiers
-- Soft delete columns (migration 007)
+This creates all tables with soft delete support (migration 007).
 
 ### 4. Load Demo Data
 
 ```bash
-# Copy demo data file to container
-docker cp infra/local/demo_simple.sql pgvms-postgres:/tmp/
+# Load customers and inventory
+docker exec -i pgvms-postgres psql -U pgvms_user -d pgvms < infra/local/demo_simple.sql
 
-# Load demo data (15 customers, 45 inventory items, transactions)
-docker exec pgvms-postgres psql -U pgvms_user -d pgvms -f /tmp/demo_simple.sql
+# Load transactions, crates, wastage, and alerts
+docker exec -i pgvms-postgres psql -U pgvms_user -d pgvms < infra/local/demo_additional_data.sql
+
+# Fix sale items data (required for transactions to work)
+docker exec pgvms-postgres psql -U pgvms_user -d pgvms -c "UPDATE sale_items si SET item_name = i.name || ' - ' || i.variant, unit = 'kg' FROM inventory_items i WHERE si.inventory_lot_id = i.id AND si.item_name IS NULL;"
 ```
-
-This creates:
-- 15 customers (B2B, wholesale, retail)
-- 45 inventory items (vegetables, fruits, dairy, grains)
-- 12 transactions with actual sale items
-- 2 crate entries
-- 5 wastage logs
-- 7 expiry alerts
 
 ### 5. Create Demo User
 
@@ -83,57 +128,50 @@ This creates:
 bash setup-demo-user.sh
 ```
 
-This will create a user with:
-- **Email:** demo@vms.com
-- **Password:** demo123
+Login: **demo@vms.com** / **demo123**
 
-### 6. Access the Application
+---
 
-**For Local Development:**
+## Environment-Specific Notes
 
-Open your browser and navigate to:
+### Local Development
 
-**Frontend:** http://localhost:3000
+No special configuration needed! Just use:
+```bash
+bash setup.sh
+```
 
-**Login with:**
-- Email: `demo@vms.com`
-- Password: `demo123`
+Everything runs on localhost with standard ports.
 
-**API Backend:** http://localhost:8080/api/v1
-- Health check: http://localhost:8080/api/v1/health
+### GitHub Codespaces
 
-**For GitHub Codespaces:**
+Codespaces uses dynamic proxy URLs that change with each session:
 
-Codespaces uses dynamic URLs. Access your application via:
+**Automatic (Recommended):**
+```bash
+bash setup.sh  # Automatically detects and configures Codespaces
+```
 
-1. **Frontend**: Click the "Ports" tab in VS Code, find port 3000, and click the globe icon or use the auto-generated URL (format: `https://<codespace-name>-3000.app.github.dev`)
+**Manual Configuration:**
+```bash
+# Get your Codespace name
+echo $CODESPACE_NAME
 
-2. **API Backend**: Similarly, find port 8080 in the Ports tab
+# Your URLs will be:
+# Frontend: https://<codespace-name>-3000.app.github.dev
+# Backend:  https://<codespace-name>-8080.app.github.dev
 
-3. **Important**: The frontend needs to be rebuilt with the correct API URL:
-   ```bash
-   # Get your Codespaces backend URL (port 8080)
-   export CODESPACE_BACKEND_URL="https://$(echo $CODESPACE_NAME)-8080.app.github.dev"
-   
-   # Rebuild frontend with correct API URL
-   docker-compose build --build-arg REACT_APP_API_URL=$CODESPACE_BACKEND_URL/api/v1 frontend
-   docker-compose up -d frontend
-   ```
+# Rebuild frontend with correct API URL
+docker-compose build --build-arg REACT_APP_API_URL=https://${CODESPACE_NAME}-8080.app.github.dev/api/v1 frontend
+docker-compose up -d frontend
+```
 
-> **Note**: Each time you restart your Codespace, the URLs will be different. You may need to rebuild the frontend with the new backend URL.
+**Port Visibility:**
+- Ports are automatically forwarded by Codespaces
+- If you see a 401/403 error, the port may need to be public
+- VS Code usually handles this automatically
 
-### 6. Explore the System
-
-You can now:
-- ✅ View Dashboard with real KPIs and charts
-- ✅ Browse 45 inventory items with expiry tracking
-- ✅ Manage 15 customers
-- ✅ View transaction history with sale items
-- ✅ Track crate balances
-- ✅ Monitor wastage logs
-- ✅ Review expiry alerts
-- ✅ Generate reports
-- ✅ Test AI forecasting (if GEMINI_API_KEY set)
+---
 
 ## Troubleshooting
 
@@ -144,11 +182,13 @@ You can now:
 docker-compose ps
 
 # View logs for a specific service
-docker logs pgvms-backend
-docker logs pgvms-frontend
-docker logs pgvms-postgres
+docker logs pgvms-backend --tail 50
+docker logs pgvms-frontend --tail 50
+docker logs pgvms-postgres --tail 50
 
 # Restart all services
+docker-compose restart
+```
 docker-compose restart
 ```
 
@@ -208,6 +248,45 @@ docker exec pgvms-postgres psql -U pgvms_user -d pgvms -c "\dt"
 
 **Known Issue:** The backend's automatic migration system (golang-migrate) currently has a path resolution issue.
 
+### Frontend Not Loading / API Errors
+
+**For Local Development:**
+```bash
+# Verify frontend environment
+docker exec pgvms-frontend cat /usr/share/nginx/html/index.html | grep -o 'http://localhost:8080'
+
+# Should return: http://localhost:8080
+# If not, rebuild with correct API URL
+docker-compose build --build-arg REACT_APP_API_URL=http://localhost:8080/api/v1 frontend
+docker-compose up -d frontend
+```
+
+**For Codespaces:**
+```bash
+# Check current API URL
+docker logs pgvms-frontend 2>&1 | head -20
+
+# Rebuild with correct Codespaces URL
+docker-compose build --no-cache --build-arg REACT_APP_API_URL=https://${CODESPACE_NAME}-8080.app.github.dev/api/v1 frontend
+docker-compose up -d frontend
+```
+
+### Transactions/Crates/Wastage Not Showing
+
+If you see empty data for these sections:
+
+```bash
+# Load additional demo data
+docker exec -i pgvms-postgres psql -U pgvms_user -d pgvms < infra/local/demo_additional_data.sql
+
+# Fix sale_items (required for transactions)
+docker exec pgvms-postgres psql -U pgvms_user -d pgvms -c "UPDATE sale_items si SET item_name = i.name || ' - ' || i.variant, unit = 'kg' FROM inventory_items i WHERE si.inventory_lot_id = i.id WHERE si.item_name IS NULL;"
+```
+
+### Automatic Migrations Not Working
+
+**Known Issue:**
+
 **Symptoms:**
 - Backend logs show: `Migration warning: first .: file does not exist`
 - Tables are not created automatically
@@ -216,7 +295,7 @@ docker exec pgvms-postgres psql -U pgvms_user -d pgvms -c "\dt"
 **Solution:** Run migrations manually:
 
 ```bash
-# Run all 7 migrations
+# Run all 7 migrations in order
 for file in infra/migrations/*.sql; do 
   docker exec -i pgvms-postgres psql -U pgvms_user -d pgvms < "$file"
 done
@@ -226,6 +305,17 @@ docker exec pgvms-postgres psql -U pgvms_user -d pgvms -c "\dt"
 ```
 
 **Note:** Migration 007 (`007_add_soft_delete.sql`) is critical - it adds the `deleted_at`, `deleted_by`, and `deletion_reason` columns required by the repository layer.
+
+### Port Already in Use
+
+```bash
+# Check what's using the ports
+lsof -i :3000
+lsof -i :8080
+lsof -i :5432
+
+# Stop the processes or change ports in docker-compose.yml
+```
 
 ### API Returns Empty Data
 
@@ -395,18 +485,144 @@ docker exec pgvms-postgres psql -U pgvms_user -d pgvms -c "SELECT * FROM schema_
 
 ## Useful Commands
 
+### Docker Management
+
 ```bash
-# View all containers
+# View all containers and their status
 docker-compose ps
+
+# View real-time logs (all services)
+docker-compose logs -f
+
+# View logs for specific service
+docker logs pgvms-backend --tail 50 -f
+docker logs pgvms-frontend --tail 50 -f
+docker logs pgvms-postgres --tail 50 -f
 
 # Stop all services
 docker-compose down
 
-# Rebuild specific service
+# Stop and remove volumes (complete cleanup)
+docker-compose down -v
+
+# Restart specific service
+docker-compose restart backend
+
+# Rebuild and restart specific service
+docker-compose up -d --build backend
+```
+
+### Database Access
+
+```bash
+# Connect to PostgreSQL CLI
+docker exec -it pgvms-postgres psql -U pgvms_user -d pgvms
+
+# Quick queries
+docker exec pgvms-postgres psql -U pgvms_user -d pgvms -c "SELECT COUNT(*) FROM customers;"
+docker exec pgvms-postgres psql -U pgvms_user -d pgvms -c "SELECT COUNT(*) FROM inventory_items;"
+docker exec pgvms-postgres psql -U pgvms_user -d pgvms -c "SELECT COUNT(*) FROM transactions;"
+
+# List all tables
+docker exec pgvms-postgres psql -U pgvms_user -d pgvms -c "\dt"
+
+# Describe table schema
+docker exec pgvms-postgres psql -U pgvms_user -d pgvms -c "\d customers"
+
+# Backup database
+docker exec pgvms-postgres pg_dump -U pgvms_user pgvms > backup.sql
+
+# Restore database
+docker exec -i pgvms-postgres psql -U pgvms_user -d pgvms < backup.sql
+```
+
+### API Testing
+
+```bash
+# Get demo user token
+TOKEN=$(cat .demo-token)
+
+# Test various endpoints
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/customers | jq
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/inventory | jq
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/transactions | jq
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/crates | jq
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/wastage | jq
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/expiry-alerts | jq
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/dashboard | jq
+
+# Check API health
+curl http://localhost:8080/api/v1/health
+```
+
+### Running Tests
+
+```bash
+# Backend tests
+cd backend
+go test ./... -v
+
+# Run specific test
+go test -v -run TestCustomerCRUD
+
+# Integration tests
+cd backend/tests/integration
+go test -v
+
+# Frontend tests (if configured)
+cd frontend
+npm test
+```
+
+### Development Workflow
+
+```bash
+# Make code changes, then:
+
+# Rebuild backend
+cd /path/to/VMS
 docker-compose up -d --build backend
 
-# View real-time logs
-docker-compose logs -f
+# Rebuild frontend
+docker-compose up -d --build frontend
+
+# Watch logs while developing
+docker-compose logs -f backend
+
+# Quick iteration (no cache)
+docker-compose build --no-cache backend
+docker-compose up -d backend
+```
+
+### Database Migrations
+
+```bash
+# Run all migrations in order
+for file in infra/migrations/*.sql; do 
+  echo "Running $(basename $file)..."
+  docker exec -i pgvms-postgres psql -U pgvms_user -d pgvms < "$file"
+done
+
+# Run specific migration
+docker exec -i pgvms-postgres psql -U pgvms_user -d pgvms < infra/migrations/007_add_soft_delete.sql
+
+# Check migration status (if you have schema_migrations table)
+docker exec pgvms-postgres psql -U pgvms_user -d pgvms -c "SELECT * FROM schema_migrations ORDER BY version;"
+```
+
+### Building for Production
+
+```bash
+# Backend binary
+cd backend
+go build -o pgvms .
+./pgvms
+
+# Frontend production build
+cd frontend
+npm run build
+# Output in build/ directory
+```
 
 # Access database
 docker exec -it pgvms-postgres psql -U pgvms_user -d pgvms

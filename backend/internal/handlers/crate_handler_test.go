@@ -26,9 +26,9 @@ func TestCrateHandler_IssueCrates(t *testing.T) {
 	handler := NewCrateHandler(crateService)
 
 	crate := domain.Crate{
-		CustomerID:      "c1",
-		TransactionType: "out",
-		Quantity:        10,
+		CustomerID:     "c1",
+		CratesIssued:   10,
+		CratesReturned: 0,
 	}
 
 	body, _ := json.Marshal(crate)
@@ -45,10 +45,10 @@ func TestCrateHandler_IssueCrates(t *testing.T) {
 func TestCrateHandler_GetByID(t *testing.T) {
 	mockRepo := &mockCrateRepo{
 		crate: &domain.Crate{
-			ID:              "cr1",
-			CustomerID:      "c1",
-			TransactionType: "out",
-			Quantity:        10,
+			ID:             "cr1",
+			CustomerID:     "c1",
+			CratesIssued:   10,
+			CratesReturned: 0,
 		},
 	}
 	mockCustRepo := &mockCustomerRepo{}

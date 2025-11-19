@@ -36,6 +36,16 @@ func (m *mockCustomerRepo) GetByID(ctx context.Context, id string) (*domain.Cust
 	return nil, domain.ErrNotFound
 }
 
+func (m *mockCustomerRepo) GetByContactNumber(ctx context.Context, contactNumber string) (*domain.Customer, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	if m.customer != nil {
+		return m.customer, nil
+	}
+	return nil, domain.ErrNotFound
+}
+
 func (m *mockCustomerRepo) List(ctx context.Context) ([]*domain.Customer, error) {
 	if m.err != nil {
 		return nil, m.err
@@ -225,6 +235,10 @@ func (m *mockCrateRepo) GetByID(ctx context.Context, id string) (*domain.CrateEn
 		return m.crate, nil
 	}
 	return nil, domain.ErrNotFound
+}
+
+func (m *mockCrateRepo) List(ctx context.Context) ([]*domain.CrateEntry, error) {
+	return m.crates, m.err
 }
 
 func (m *mockCrateRepo) ListByCustomer(ctx context.Context, customerID string) ([]*domain.CrateEntry, error) {

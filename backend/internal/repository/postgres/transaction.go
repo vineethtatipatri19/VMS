@@ -87,13 +87,14 @@ func (r *transactionRepository) ListByCustomer(ctx context.Context, customerID s
 	for rows.Next() {
 		var tx domain.Transaction
 		var paymentMethod, paymentRef, notes, status, invoiceNumber, saleType, deliveryStatus, deliveryAddress sql.NullString
+		var balanceAfter sql.NullFloat64
 		var dueDate, deliveryDate sql.NullTime
 
 		if err := rows.Scan(
 			&tx.ID, &tx.CustomerID, &tx.Date, &tx.Type, &tx.PaymentAmount, &tx.TotalAmount,
 			&paymentMethod, &paymentRef, &notes, &status, &invoiceNumber,
 			&saleType, &deliveryStatus, &deliveryDate, &deliveryAddress,
-			&tx.DiscountAmount, &tx.TaxAmount, &tx.BalanceAfter, &tx.ReceiptSent,
+			&tx.DiscountAmount, &tx.TaxAmount, &balanceAfter, &tx.ReceiptSent,
 			&dueDate, &tx.IsOverdue, &tx.CreatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan transaction: %w", err)
@@ -107,6 +108,9 @@ func (r *transactionRepository) ListByCustomer(ctx context.Context, customerID s
 		tx.SaleType = fromNullString(saleType)
 		tx.DeliveryStatus = fromNullString(deliveryStatus)
 		tx.DeliveryAddress = fromNullString(deliveryAddress)
+		if balanceAfter.Valid {
+			tx.BalanceAfter = balanceAfter.Float64
+		}
 		if dueDate.Valid {
 			tx.DueDate = &dueDate.Time
 		}
@@ -162,13 +166,14 @@ func (r *transactionRepository) List(ctx context.Context, txType string, startDa
 	for rows.Next() {
 		var tx domain.Transaction
 		var paymentMethod, paymentRef, notes, status, invoiceNumber, saleType, deliveryStatus, deliveryAddress sql.NullString
+		var balanceAfter sql.NullFloat64
 		var dueDate, deliveryDate sql.NullTime
 
 		if err := rows.Scan(
 			&tx.ID, &tx.CustomerID, &tx.Date, &tx.Type, &tx.PaymentAmount, &tx.TotalAmount,
 			&paymentMethod, &paymentRef, &notes, &status, &invoiceNumber,
 			&saleType, &deliveryStatus, &deliveryDate, &deliveryAddress,
-			&tx.DiscountAmount, &tx.TaxAmount, &tx.BalanceAfter, &tx.ReceiptSent,
+			&tx.DiscountAmount, &tx.TaxAmount, &balanceAfter, &tx.ReceiptSent,
 			&dueDate, &tx.IsOverdue, &tx.CreatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan transaction: %w", err)
@@ -182,6 +187,9 @@ func (r *transactionRepository) List(ctx context.Context, txType string, startDa
 		tx.SaleType = fromNullString(saleType)
 		tx.DeliveryStatus = fromNullString(deliveryStatus)
 		tx.DeliveryAddress = fromNullString(deliveryAddress)
+		if balanceAfter.Valid {
+			tx.BalanceAfter = balanceAfter.Float64
+		}
 		if dueDate.Valid {
 			tx.DueDate = &dueDate.Time
 		}

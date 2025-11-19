@@ -10,6 +10,7 @@ import (
 type MockCrateRepository struct {
 	CreateFunc         func(ctx context.Context, crate *domain.CrateEntry) error
 	GetByIDFunc        func(ctx context.Context, id string) (*domain.CrateEntry, error)
+	ListFunc           func(ctx context.Context) ([]*domain.CrateEntry, error)
 	ListByCustomerFunc func(ctx context.Context, customerID string) ([]*domain.CrateEntry, error)
 	UpdateFunc         func(ctx context.Context, crate *domain.CrateEntry) error
 	DeleteFunc         func(ctx context.Context, id string, req *domain.DeleteRequest) error
@@ -28,6 +29,13 @@ func (m *MockCrateRepository) GetByID(ctx context.Context, id string) (*domain.C
 		return m.GetByIDFunc(ctx, id)
 	}
 	return nil, domain.ErrNotFound
+}
+
+func (m *MockCrateRepository) List(ctx context.Context) ([]*domain.CrateEntry, error) {
+	if m.ListFunc != nil {
+		return m.ListFunc(ctx)
+	}
+	return []*domain.CrateEntry{}, nil
 }
 
 func (m *MockCrateRepository) ListByCustomer(ctx context.Context, customerID string) ([]*domain.CrateEntry, error) {

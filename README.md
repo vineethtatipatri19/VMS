@@ -48,54 +48,47 @@ A complete, production-ready vendor management system for perishable goods with 
 
 Get up and running in under 5 minutes with demo data!
 
-### Local Development
+### 🚀 One-Command Setup (Local & Codespaces)
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/vineethtatipatri19/VMS.git
-cd VMS
-
-# 2. Start all services (PostgreSQL, Backend, Frontend)
-docker-compose up -d --build
-
-# 3. Run migrations manually (automatic migrations have a known issue)
-for file in infra/migrations/*.sql; do 
-  docker exec -i pgvms-postgres psql -U pgvms_user -d pgvms < "$file"
-done
-
-# 4. Load demo data
-docker cp infra/local/demo_simple.sql pgvms-postgres:/tmp/
-docker exec pgvms-postgres psql -U pgvms_user -d pgvms -f /tmp/demo_simple.sql
-
-# 5. Create demo user (email: demo@vms.com, password: demo123)
-bash setup-demo-user.sh
-
-# 6. Open your browser
-# Frontend: http://localhost:3000
-# Login with: demo@vms.com / demo123
+# Works everywhere - automatically detects your environment
+bash setup.sh
 ```
 
-### GitHub Codespaces
-
-Running in Codespaces? Use our automated setup script:
-
-```bash
-# One-command setup for Codespaces
-bash setup-codespaces.sh
-```
-
-This automatically configures the correct Codespaces URLs for frontend/backend communication.
+This single command:
+- ✅ Detects if you're on local or Codespaces
+- ✅ Configures correct URLs automatically
+- ✅ Builds and starts all services
+- ✅ Runs database migrations (7 migrations)
+- ✅ Loads demo data (15 customers, 45 items, 4 transactions)
+- ✅ Creates demo user (demo@vms.com / demo123)
+- ✅ Verifies everything is working
 
 **That's it!** You now have:
 - ✅ 15 customers (B2B, wholesale, retail)
-- ✅ 45 inventory items with expiry tracking
-- ✅ 12 transactions with sale items
-- ✅ Crate balances, wastage logs, expiry alerts
+- ✅ 45 inventory items (vegetables & fruits)
+- ✅ 4 transactions with sale items
+- ✅ 5 crate ledger entries
+- ✅ 7 wastage logs
+- ✅ 12 expiry alerts
 - ✅ Working dashboard with real charts
 
-**📖 Full Setup Guide:** See [SETUP.md](SETUP.md) for detailed instructions, troubleshooting, and manual setup
+### 📱 Access Your Application
 
-**📖 Full Setup Guide:** See [SETUP.md](SETUP.md) for detailed instructions, troubleshooting, and manual setup
+**Local Development:**
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8080/api/v1
+
+**GitHub Codespaces:**
+- Automatic URL configuration
+- Click the 'Ports' tab → Globe icon next to port 3000
+- Or visit the URL shown in setup output
+
+**Login:**
+- Email: `demo@vms.com`
+- Password: `demo123`
+
+**📖 Need Help?** See [SETUP.md](SETUP.md) for detailed instructions and troubleshooting
 
 ## What's Inside
 

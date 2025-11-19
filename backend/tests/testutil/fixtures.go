@@ -99,13 +99,14 @@ func FixtureSaleItem(overrides ...func(*domain.SaleItem)) *domain.SaleItem {
 // FixtureCrateEntry returns a test crate entry
 func FixtureCrateEntry(overrides ...func(*domain.CrateEntry)) *domain.CrateEntry {
 	entry := &domain.CrateEntry{
-		ID:              "crate-001",
-		CustomerID:      "cust-test-001",
-		TransactionType: "out",
-		Quantity:        10,
-		Notes:           "Test crate issue",
-		CreatedAt:       time.Now(),
-		UpdatedAt:       time.Now(),
+		ID:             "crate-001",
+		CustomerID:     "cust-test-001",
+		Date:           time.Now(),
+		CratesIssued:   10,
+		CratesReturned: 0,
+		Balance:        10,
+		Notes:          "Test crate issue",
+		UpdatedAt:      time.Now(),
 	}
 
 	for _, override := range overrides {

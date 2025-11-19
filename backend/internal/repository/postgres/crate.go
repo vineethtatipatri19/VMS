@@ -41,20 +41,20 @@ func (r *crateRepository) GetByID(ctx context.Context, id string) (*domain.Crate
 	query := `SELECT 
 		cl.id, cl.customer_id, c.name as customer_name, cl.transaction_id, cl.date,
 		cl.crates_issued, cl.crates_returned, cl.balance, cl.notes, 
-		cl.crate_type, cl.crate_value, cl.updated_at, cl.updated_by
+		cl.crate_type, cl.crate_value, cl.updated_at
 	FROM crate_ledger cl
 	LEFT JOIN customers c ON cl.customer_id = c.id
 	WHERE cl.id = $1 AND cl.deleted_at IS NULL`
 
 	var crate domain.CrateEntry
-	var notes, crateType, updatedBy, transactionID sql.NullString
+	var notes, crateType, transactionID sql.NullString
 	var customerName sql.NullString
 	var crateValue sql.NullFloat64
 
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&crate.ID, &crate.CustomerID, &customerName, &transactionID, &crate.Date,
 		&crate.CratesIssued, &crate.CratesReturned, &crate.Balance, &notes,
-		&crateType, &crateValue, &crate.UpdatedAt, &updatedBy,
+		&crateType, &crateValue, &crate.UpdatedAt,
 	)
 
 	if err == sql.ErrNoRows {
@@ -69,7 +69,7 @@ func (r *crateRepository) GetByID(ctx context.Context, id string) (*domain.Crate
 	crate.Notes = fromNullString(notes)
 	crate.CrateType = fromNullString(crateType)
 	crate.CrateValue = crateValue.Float64
-	crate.UpdatedBy = fromNullString(updatedBy)
+	crate.UpdatedBy = ""
 
 	return &crate, nil
 }
@@ -78,7 +78,7 @@ func (r *crateRepository) ListByCustomer(ctx context.Context, customerID string)
 	query := `SELECT 
 		cl.id, cl.customer_id, c.name as customer_name, cl.transaction_id, cl.date,
 		cl.crates_issued, cl.crates_returned, cl.balance, cl.notes, 
-		cl.crate_type, cl.crate_value, cl.updated_at, cl.updated_by
+		cl.crate_type, cl.crate_value, cl.updated_at
 	FROM crate_ledger cl
 	LEFT JOIN customers c ON cl.customer_id = c.id
 	WHERE cl.customer_id = $1 AND cl.deleted_at IS NULL
@@ -93,14 +93,14 @@ func (r *crateRepository) ListByCustomer(ctx context.Context, customerID string)
 	crates := []*domain.CrateEntry{}
 	for rows.Next() {
 		var crate domain.CrateEntry
-		var notes, crateType, updatedBy, transactionID sql.NullString
+		var notes, crateType, transactionID sql.NullString
 		var customerName sql.NullString
 		var crateValue sql.NullFloat64
 
 		if err := rows.Scan(
 			&crate.ID, &crate.CustomerID, &customerName, &transactionID, &crate.Date,
 			&crate.CratesIssued, &crate.CratesReturned, &crate.Balance, &notes,
-			&crateType, &crateValue, &crate.UpdatedAt, &updatedBy,
+			&crateType, &crateValue, &crate.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan crate: %w", err)
 		}
@@ -110,7 +110,7 @@ func (r *crateRepository) ListByCustomer(ctx context.Context, customerID string)
 		crate.Notes = fromNullString(notes)
 		crate.CrateType = fromNullString(crateType)
 		crate.CrateValue = crateValue.Float64
-		crate.UpdatedBy = fromNullString(updatedBy)
+		crate.UpdatedBy = ""
 
 		crates = append(crates, &crate)
 	}
@@ -122,7 +122,7 @@ func (r *crateRepository) List(ctx context.Context) ([]*domain.CrateEntry, error
 	query := `SELECT 
 		cl.id, cl.customer_id, c.name as customer_name, cl.transaction_id, cl.date,
 		cl.crates_issued, cl.crates_returned, cl.balance, cl.notes, 
-		cl.crate_type, cl.crate_value, cl.updated_at, cl.updated_by
+		cl.crate_type, cl.crate_value, cl.updated_at
 	FROM crate_ledger cl
 	LEFT JOIN customers c ON cl.customer_id = c.id
 	WHERE cl.deleted_at IS NULL
@@ -137,14 +137,14 @@ func (r *crateRepository) List(ctx context.Context) ([]*domain.CrateEntry, error
 	crates := []*domain.CrateEntry{}
 	for rows.Next() {
 		var crate domain.CrateEntry
-		var notes, crateType, updatedBy, transactionID sql.NullString
+		var notes, crateType, transactionID sql.NullString
 		var customerName sql.NullString
 		var crateValue sql.NullFloat64
 
 		if err := rows.Scan(
 			&crate.ID, &crate.CustomerID, &customerName, &transactionID, &crate.Date,
 			&crate.CratesIssued, &crate.CratesReturned, &crate.Balance, &notes,
-			&crateType, &crateValue, &crate.UpdatedAt, &updatedBy,
+			&crateType, &crateValue, &crate.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan crate: %w", err)
 		}
@@ -154,7 +154,7 @@ func (r *crateRepository) List(ctx context.Context) ([]*domain.CrateEntry, error
 		crate.Notes = fromNullString(notes)
 		crate.CrateType = fromNullString(crateType)
 		crate.CrateValue = crateValue.Float64
-		crate.UpdatedBy = fromNullString(updatedBy)
+		crate.UpdatedBy = ""
 
 		crates = append(crates, &crate)
 	}
