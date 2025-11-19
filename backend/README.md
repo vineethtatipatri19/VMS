@@ -12,7 +12,6 @@ backend/
 │   ├── config/          # Configuration management
 │   ├── domain/          # Business entities & rules
 │   ├── handlers/        # HTTP request handlers
-│   ├── httputil/        # HTTP utilities
 │   ├── middleware/      # HTTP middleware (auth, CORS, logging)
 │   ├── repository/      # Data access layer
 │   │   ├── interfaces.go
@@ -22,13 +21,16 @@ backend/
 │   └── pkg/             # Shared utilities
 │       ├── logger/      # Structured logging
 │       ├── validator/   # Input validation
-│       └── errors/      # Error handling
+│       ├── errors/      # Error handling
+│       └── httputil/    # HTTP response utilities
 ├── tests/
 │   ├── e2e/            # End-to-end tests
 │   ├── integration/    # Integration tests
 │   └── testutil/       # Test utilities
 ├── docs/               # Documentation
-└── main.go            # Application entry point
+├── main.go            # Application entry point
+├── migrate.go         # Database migration utilities
+└── startup.go         # Initialization logic
 ```
 
 ### Architectural Layers
@@ -52,12 +54,6 @@ backend/
    - HTTP request/response handling
    - Input validation
    - Calls service layer
-
-5. **Infrastructure** (root level legacy files)
-   - Authentication (`auth.go`)
-   - Dashboard (`dashboard.go`)
-   - Reports (`reports.go`)
-   - Forecasting (`forecasting.go`)
 
 ## 🚀 Quick Start
 
