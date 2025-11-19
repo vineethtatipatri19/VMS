@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
+
+	"github.com/example/pgvms/internal/domain"
 )
 
 // ReportType represents different report types
@@ -27,11 +29,11 @@ type ReportRequest struct {
 
 // SalesReport represents a sales report
 type SalesReport struct {
-	TotalSales    float64           `json:"totalSales"`
-	TotalItems    int               `json:"totalItems"`
-	Transactions  []Transaction     `json:"transactions"`
-	TopItems      []TopItem         `json:"topItems"`
-	GeneratedAt   time.Time         `json:"generatedAt"`
+	TotalSales    float64              `json:"totalSales"`
+	TotalItems    int                  `json:"totalItems"`
+	Transactions  []domain.Transaction `json:"transactions"`
+	TopItems      []TopItem            `json:"topItems"`
+	GeneratedAt   time.Time            `json:"generatedAt"`
 }
 
 // TopItem represents top selling items
@@ -43,23 +45,23 @@ type TopItem struct {
 
 // InventoryReport represents an inventory report
 type InventoryReport struct {
-	TotalItems      int             `json:"totalItems"`
-	ExpiringSoon    int             `json:"expiringSoon"`
-	Expired         int             `json:"expired"`
-	Items           []InventoryItem `json:"items"`
-	GeneratedAt     time.Time       `json:"generatedAt"`
+	TotalItems      int                      `json:"totalItems"`
+	ExpiringSoon    int                      `json:"expiringSoon"`
+	Expired         int                      `json:"expired"`
+	Items           []domain.InventoryItem   `json:"items"`
+	GeneratedAt     time.Time                `json:"generatedAt"`
 }
 
 // CustomerReport represents a customer financial report
 type CustomerReport struct {
-	CustomerID       string        `json:"customerId"`
-	CustomerName     string        `json:"customerName"`
-	TotalSales       float64       `json:"totalSales"`
-	TotalPayments    float64       `json:"totalPayments"`
-	OutstandingBalance float64     `json:"outstandingBalance"`
-	CrateBalance     int           `json:"crateBalance"`
-	Transactions     []Transaction `json:"transactions"`
-	GeneratedAt      time.Time     `json:"generatedAt"`
+	CustomerID         string                 `json:"customerId"`
+	CustomerName       string                 `json:"customerName"`
+	TotalSales         float64                `json:"totalSales"`
+	TotalPayments      float64                `json:"totalPayments"`
+	OutstandingBalance float64                `json:"outstandingBalance"`
+	CrateBalance       int                    `json:"crateBalance"`
+	Transactions       []domain.Transaction   `json:"transactions"`
+	GeneratedAt        time.Time              `json:"generatedAt"`
 }
 
 // Handler for generating reports
@@ -141,11 +143,11 @@ func generateSalesReport(ctx interface{}, startDate, endDate string) (*SalesRepo
 	}
 	defer rows.Close()
 	
-	transactions := []Transaction{}
+	transactions := []domain.Transaction{}
 	totalSales := 0.0
 	
 	for rows.Next() {
-		var tx Transaction
+		var tx domain.Transaction
 		if err := rows.Scan(&tx.ID, &tx.CustomerID, &tx.Date, &tx.Type, &tx.PaymentAmount, &tx.TotalAmount, &tx.Details, &tx.CreatedAt); err != nil {
 			continue
 		}
@@ -225,12 +227,12 @@ func generateInventoryReport(ctx interface{}) (*InventoryReport, error) {
 	}
 	defer rows.Close()
 	
-	items := []InventoryItem{}
+	items := []domain.InventoryItem{}
 	expiringSoon := 0
 	expired := 0
 	
 	for rows.Next() {
-		var item InventoryItem
+		var item domain.InventoryItem
 		if err := rows.Scan(&item.ID, &item.Name, &item.Variant, &item.LotNumber, &item.Quantity, &item.Unit, &item.PurchaseDate, &item.ExpiryDate, &item.CreatedAt, &item.UpdatedAt); err != nil {
 			continue
 		}
@@ -293,12 +295,12 @@ func generateCustomerReport(ctx interface{}, customerID, startDate, endDate stri
 	}
 	defer rows.Close()
 	
-	transactions := []Transaction{}
+	transactions := []domain.Transaction{}
 	totalSales := 0.0
 	totalPayments := 0.0
 	
 	for rows.Next() {
-		var tx Transaction
+		var tx domain.Transaction
 		if err := rows.Scan(&tx.ID, &tx.CustomerID, &tx.Date, &tx.Type, &tx.PaymentAmount, &tx.TotalAmount, &tx.Details, &tx.CreatedAt); err != nil {
 			continue
 		}
@@ -306,8 +308,8 @@ func generateCustomerReport(ctx interface{}, customerID, startDate, endDate stri
 		
 		if tx.Type == "sale" {
 			totalSales += tx.TotalAmount
-		} else if tx.Type == "payment" && tx.PaymentAmount != nil {
-			totalPayments += *tx.PaymentAmount
+		} else if tx.Type == "payment" && tx.PaymentAmount > 0 {
+			totalPayments += tx.PaymentAmount
 		}
 	}
 	
