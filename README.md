@@ -343,11 +343,30 @@ For detailed architecture, see [ARCHITECTURE.md](ARCHITECTURE.md)
 - SQL injection protection with parameterized queries
 - Input validation and error handling on all endpoints
 
+## Documentation
+
+### Essential Docs (Root Level)
+- **[README.md](README.md)** - This file, project overview and quick start
+- **[SETUP.md](SETUP.md)** - Detailed setup instructions and troubleshooting
+- **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - Common commands cheat sheet
+
+### Technical Documentation
+- **[backend/README.md](backend/README.md)** - Backend architecture and development guide
+- **[backend/docs/](backend/docs/)** - Detailed backend documentation
+  - ARCHITECTURE.md - Clean architecture layers
+  - CLEAN_ARCHITECTURE.md - Design principles
+  - TESTING.md - Testing strategy
+  - TEST_STRUCTURE.md - Test organization
+- **[docs/API.md](docs/API.md)** - Complete API endpoint reference
+- **[infra/migrations/README.md](infra/migrations/README.md)** - Database migration guide
+
+### Historical Documentation
+- **[.artifacts/historical-docs/](.artifacts/historical-docs/)** - Implementation history and change logs
+
 ## Support
 
 - **Issues:** https://github.com/vineethtatipatri19/VMS/issues
-- **Quick Reference:** [QUICK_REFERENCE.md](QUICK_REFERENCE.md) - Essential commands
-- **Setup Help:** [SETUP.md](SETUP.md) - Detailed troubleshooting
+- **Documentation:** See above section for all available docs
 
 ## Contributing
 
