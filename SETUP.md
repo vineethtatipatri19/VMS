@@ -4,17 +4,56 @@ This guide will help you get the Vendor Management System running in under 5 min
 
 ## Prerequisites
 
-- Docker and Docker Compose installed
-- Git installed
-- 4GB RAM available
-- Ports 3000, 5432, and 8080 available
+### All Platforms (Linux, macOS, Windows)
+
+- **Docker Desktop** installed and running
+  - Windows: [Docker Desktop for Windows](https://docs.docker.com/desktop/install/windows-install/)
+  - macOS: [Docker Desktop for Mac](https://docs.docker.com/desktop/install/mac-install/)
+  - Linux: [Docker Engine](https://docs.docker.com/engine/install/)
+- **Git** installed
+  - Windows: [Git for Windows](https://git-scm.com/download/win) or GitHub Desktop
+  - macOS: `brew install git` or Xcode Command Line Tools
+  - Linux: `sudo apt install git` or `sudo yum install git`
+- **4GB RAM** available
+- **Ports 3000, 5432, and 8080** available
+
+### Windows-Specific Requirements
+
+**For Windows 10/11:**
+1. **WSL 2** (Windows Subsystem for Linux) - Required by Docker Desktop
+   - Enable WSL 2: Open PowerShell as Administrator and run:
+     ```powershell
+     wsl --install
+     ```
+   - Restart your computer when prompted
+   - Set WSL 2 as default: `wsl --set-default-version 2`
+
+2. **Docker Desktop for Windows**
+   - Download from [Docker Hub](https://docs.docker.com/desktop/install/windows-install/)
+   - During installation, ensure "Use WSL 2 instead of Hyper-V" is selected
+   - Start Docker Desktop and wait for it to finish starting (whale icon in system tray)
+
+3. **Git Bash or PowerShell**
+   - Git Bash (recommended): Comes with Git for Windows
+   - PowerShell: Built into Windows
+   - Command Prompt: Also works, but Git Bash preferred for bash scripts
+
+**Verify Installation (Windows):**
+```bash
+# Open Git Bash or PowerShell and run:
+docker --version          # Should show Docker version
+docker-compose --version  # Should show Docker Compose version
+git --version            # Should show Git version
+wsl --status             # Should show WSL 2 is running
+```
 
 ## 🚀 Quick Start (Recommended)
 
 ### One-Command Setup
 
-The easiest way to get started - works on **local machines** and **GitHub Codespaces**:
+The easiest way to get started - works on **Linux, macOS, Windows, and GitHub Codespaces**:
 
+**Linux / macOS / Git Bash (Windows):**
 ```bash
 # Clone the repository
 git clone https://github.com/vineethtatipatri19/VMS.git
@@ -22,6 +61,30 @@ cd VMS
 
 # Run the unified setup script
 bash setup.sh
+```
+
+**Windows PowerShell:**
+```powershell
+# Clone the repository
+git clone https://github.com/vineethtatipatri19/VMS.git
+cd VMS
+
+# Run the unified setup script
+bash setup.sh
+# OR if bash is not available:
+sh setup.sh
+```
+
+**Windows Command Prompt:**
+```cmd
+REM Clone the repository
+git clone https://github.com/vineethtatipatri19/VMS.git
+cd VMS
+
+REM Run setup using Git Bash (recommended)
+"C:\Program Files\Git\bin\bash.exe" setup.sh
+
+REM Alternative: Use Docker Compose directly (see Manual Setup section)
 ```
 
 **That's it!** The script automatically:
@@ -134,7 +197,7 @@ Login: **demo@vms.com** / **demo123**
 
 ## Environment-Specific Notes
 
-### Local Development
+### Local Development (Linux / macOS)
 
 No special configuration needed! Just use:
 ```bash
@@ -142,6 +205,74 @@ bash setup.sh
 ```
 
 Everything runs on localhost with standard ports.
+
+### Windows Local Development
+
+**Using Git Bash (Recommended):**
+```bash
+# Open Git Bash terminal
+cd /c/Users/YourUsername/Projects/VMS
+bash setup.sh
+```
+
+**Using PowerShell:**
+```powershell
+# Open PowerShell
+cd C:\Users\YourUsername\Projects\VMS
+bash setup.sh
+# or
+sh setup.sh
+```
+
+**Using Docker Desktop Directly:**
+1. Open Docker Desktop
+2. Navigate to project folder in File Explorer
+3. Right-click → "Open Git Bash here"
+4. Run: `bash setup.sh`
+
+**Common Windows Issues:**
+
+1. **"bash: command not found"**
+   - Solution: Use full path to bash: `"C:\Program Files\Git\bin\bash.exe" setup.sh`
+   - Or install Git Bash and add to PATH
+
+2. **Line ending issues (CRLF vs LF)**
+   ```bash
+   # Convert line endings if script fails
+   git config --global core.autocrlf false
+   git clone https://github.com/vineethtatipatri19/VMS.git
+   ```
+
+3. **Permission denied on .sh files**
+   ```bash
+   # Make scripts executable
+   chmod +x setup.sh setup-demo-user.sh
+   ```
+
+4. **Docker daemon not running**
+   - Start Docker Desktop from Start Menu
+   - Wait for whale icon to appear in system tray
+   - Ensure WSL 2 backend is running: `wsl --status`
+
+5. **Port already in use**
+   ```powershell
+   # Check what's using the port (PowerShell as Admin)
+   netstat -ano | findstr :3000
+   netstat -ano | findstr :8080
+   netstat -ano | findstr :5432
+   
+   # Stop the process (replace PID with actual process ID)
+   taskkill /PID <PID> /F
+   ```
+
+6. **Docker volumes permission issues**
+   - Ensure Docker Desktop has access to your drive
+   - Settings → Resources → File Sharing → Add your project folder
+
+**Windows Path Considerations:**
+- Use forward slashes `/` in Git Bash: `cd /c/Users/YourName/VMS`
+- Use backslashes `\` in PowerShell/CMD: `cd C:\Users\YourName\VMS`
+- Docker commands work the same across all terminals
 
 ### GitHub Codespaces
 
@@ -173,7 +304,153 @@ docker-compose up -d frontend
 
 ---
 
+## Platform-Specific Setup Examples
+
+### Windows 10/11 Complete Walkthrough
+
+**Step 1: Install Prerequisites**
+```powershell
+# Open PowerShell as Administrator
+
+# Install WSL 2
+wsl --install
+
+# Restart computer
+# After restart, open PowerShell again
+
+# Download and install Docker Desktop from:
+# https://docs.docker.com/desktop/install/windows-install/
+
+# Download and install Git from:
+# https://git-scm.com/download/win
+```
+
+**Step 2: Setup VMS**
+```bash
+# Open Git Bash (search in Start Menu)
+
+# Clone repository
+cd /c/Users/YourUsername/Documents
+git clone https://github.com/vineethtatipatri19/VMS.git
+cd VMS
+
+# Ensure Docker Desktop is running (check system tray)
+
+# Run setup
+bash setup.sh
+
+# Wait 2-3 minutes for all services to start
+```
+
+**Step 3: Access Application**
+- Open browser: http://localhost:3000
+- Login with demo@vms.com / demo123
+
+**Alternative: Use Docker Desktop UI**
+1. Open Docker Desktop
+2. Click "Images" → "Build" → Select `docker-compose.yml`
+3. Click "Containers" to see running services
+4. Click port numbers to open in browser
+
+### macOS Complete Walkthrough
+
+**Step 1: Install Prerequisites**
+```bash
+# Install Homebrew (if not installed)
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Install Git and Docker
+brew install git
+brew install --cask docker
+
+# Start Docker Desktop from Applications folder
+```
+
+**Step 2: Setup VMS**
+```bash
+# Open Terminal
+
+# Clone repository
+cd ~/Projects
+git clone https://github.com/vineethtatipatri19/VMS.git
+cd VMS
+
+# Run setup
+bash setup.sh
+```
+
+### Linux (Ubuntu/Debian) Complete Walkthrough
+
+**Step 1: Install Prerequisites**
+```bash
+# Update system
+sudo apt update
+
+# Install Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo usermod -aG docker $USER
+
+# Install Docker Compose
+sudo apt install docker-compose-plugin
+
+# Logout and login again for group changes
+
+# Install Git
+sudo apt install git
+```
+
+**Step 2: Setup VMS**
+```bash
+# Clone repository
+git clone https://github.com/vineethtatipatri19/VMS.git
+cd VMS
+
+# Run setup
+bash setup.sh
+```
+
+---
+
 ## Troubleshooting
+
+### Windows-Specific Issues
+
+**Docker Desktop won't start:**
+- Check if WSL 2 is enabled: `wsl --status`
+- Ensure virtualization is enabled in BIOS
+- Try: Settings → Reset to factory defaults
+
+**"docker-compose: command not found":**
+```powershell
+# Use docker compose (without hyphen) on newer versions
+docker compose up -d
+
+# Or reinstall Docker Desktop
+```
+
+**Script fails with "Permission denied":**
+```bash
+# In Git Bash
+chmod +x *.sh
+bash setup.sh
+```
+
+**Cannot connect to Docker daemon:**
+- Ensure Docker Desktop is running
+- Check Docker Desktop → Settings → Resources → WSL Integration
+- Enable integration for your WSL distribution
+
+**Port already in use (Windows):**
+```powershell
+# Check what's using the port (PowerShell as Admin)
+netstat -ano | findstr :3000
+netstat -ano | findstr :8080
+netstat -ano | findstr :5432
+
+# Stop the process (replace PID with actual process ID)
+taskkill /PID <PID> /F
+```
 
 ### Services Not Starting
 
